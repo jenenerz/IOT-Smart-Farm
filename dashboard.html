@@ -219,6 +219,16 @@
             color: #7b1fa2;
         }
 
+        .node-status.daytime {
+            background: #fff8e1;
+            color: #ef6c00;
+        }
+
+        .node-status.nighttime {
+            background: #e8eaf6;
+            color: #3949ab;
+        }
+
         .node-status .status-indicator {
             width: 6px;
             height: 6px;
@@ -348,6 +358,7 @@
                     <tr>
                         <th>Sensor ID</th>
                         <th>Location</th>
+                        <th>Day/Night</th>
                         <th>Temperature (°C)</th>
                         <th>Humidity (%)</th>
                         <th>Status</th>
@@ -372,6 +383,7 @@
     <script>
         let lastData = null;
         const API_ENDPOINT = '/api/sensors';
+        const NODE_ACTIVE_WINDOW_MS = 15000;
 
         async function fetchSensorData() {
             try {
@@ -398,7 +410,7 @@
             
             document.getElementById('sensorTableBody').innerHTML = `
                 <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                         <div class="waiting-message">
                             <div class="icon">📡</div>
                             <p>Waiting for Arduino connection...</p>
@@ -430,8 +442,8 @@
 
             // Calculate statistics
             const sensors = data.sensors || [];
-            const activeNodes = sensors.filter(s => s.status === 'active').length;
-            const silentNodes = sensors.filter(s => s.status === 'silent').length;
+            const activeNodes = sensors.filter(s => getNodeMode(s) === 'daytime').length;
+            const silentNodes = sensors.filter(s => getNodeMode(s) === 'nighttime').length;
             const delugeCount = data.deluge_count || 0;
 
             // Update stat cards
@@ -446,7 +458,7 @@
             if (sensors.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <p>No sensor data available yet</p>
                             </div>
@@ -456,21 +468,39 @@
                 return;
             }
 
-            tbody.innerHTML = sensors.map(sensor => `
-                <tr>
-                    <td><span class="sensor-id">${sensor.sensor_id}</span></td>
-                    <td><span class="location-name">${sensor.location_name}</span></td>
-                    <td><span class="temp-value">${sensor.temperature !== null ? sensor.temperature.toFixed(1) : '--'}</span></td>
-                    <td><span class="humidity-value">${sensor.humidity !== null ? sensor.humidity.toFixed(1) : '--'}</span></td>
-                    <td>
-                        <span class="node-status ${sensor.status}">
-                            <span class="status-indicator"></span>
-                            ${sensor.status === 'active' ? 'Transmitting' : 'Silent'}
-                        </span>
-                    </td>
-                    <td><span class="timestamp">${formatTimestamp(sensor.timestamp)}</span></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = sensors.map(sensor => {
+                const nodeMode = getNodeMode(sensor);
+                const isDay = nodeMode === 'daytime';
+
+                return `
+                    <tr>
+                        <td><span class="sensor-id">${sensor.sensor_id}</span></td>
+                        <td><span class="location-name">${sensor.location_name}</span></td>
+                        <td>
+                            <span class="node-status ${nodeMode}">
+                                <span class="status-indicator"></span>
+                                ${isDay ? 'Daytime' : 'Nighttime'}
+                            </span>
+                        </td>
+                        <td><span class="temp-value">${sensor.temperature !== null ? sensor.temperature.toFixed(1) : '--'}</span></td>
+                        <td><span class="humidity-value">${sensor.humidity !== null ? sensor.humidity.toFixed(1) : '--'}</span></td>
+                        <td>
+                            <span class="node-status ${isDay ? 'active' : 'silent'}">
+                                <span class="status-indicator"></span>
+                                ${isDay ? 'Transmitting' : 'Silent'}
+                            </span>
+                        </td>
+                        <td><span class="timestamp">${formatTimestamp(sensor.timestamp)}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getNodeMode(sensor) {
+            if (!sensor || !sensor.timestamp) return 'nighttime';
+            const ts = new Date(sensor.timestamp).getTime();
+            if (Number.isNaN(ts)) return 'nighttime';
+            return (Date.now() - ts) <= NODE_ACTIVE_WINDOW_MS ? 'daytime' : 'nighttime';
         }
 
         function formatTimestamp(timestamp) {
