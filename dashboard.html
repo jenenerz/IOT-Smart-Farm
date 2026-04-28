@@ -3,154 +3,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Agriculture IoT Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Smart Farm — Live Sensor Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --green-deep: #1a3a1a;
+            --green-mid: #2d6a2d;
+            --green-bright: #4caf50;
+            --green-pale: #a8d5a2;
+            --green-wash: #f0f7ee;
+            --amber: #e8a020;
+            --amber-pale: #fff3cd;
+            --red: #d94f4f;
+            --blue: #3a7bd5;
+            --blue-pale: #e8f0fb;
+            --ink: #1a2a1a;
+            --ink-mid: #3a4a3a;
+            --ink-light: #6a7a6a;
+            --border: #d0e4cc;
+            --surface: #ffffff;
+            --bg: #eef5eb;
+            --mono: 'DM Mono', monospace;
+            --display: 'Syne', sans-serif;
+            --body: 'DM Sans', sans-serif;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f5f9f0 0%, #e8f5e0 50%, #f0f7e8 100%);
+            font-family: var(--body);
+            background: var(--bg);
             min-height: 100vh;
-            color: #2d3a2d;
-            padding: 24px;
+            color: var(--ink);
         }
 
-        .dashboard-container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #c5e1c5;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2e7d32;
+        /* ── MODAL ── */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(20, 40, 20, 0.72);
+            backdrop-filter: blur(6px);
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            z-index: 999;
+            padding: 20px;
         }
 
-        .header h1::before {
-            content: "🌱";
-            font-size: 28px;
-        }
+        .modal-backdrop.hidden { display: none; }
 
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
+        .modal {
+            background: var(--surface);
             border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid var(--border);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.18);
+            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.88) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .modal-logo .leaf {
+            width: 36px;
+            height: 36px;
+            background: var(--green-mid);
+            border-radius: 50% 50% 50% 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .modal-logo span {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--green-deep);
+        }
+
+        .modal h2 {
+            font-family: var(--display);
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .modal p {
             font-size: 14px;
+            color: var(--ink-light);
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 12px;
             font-weight: 500;
-            background: #e8f5e0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ink-mid);
+            margin-bottom: 6px;
         }
 
-        .connection-status.connected {
-            background: #e8f5e0;
-            color: #2e7d32;
+        .field-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-family: var(--mono);
+            font-size: 14px;
+            color: var(--ink);
+            background: var(--bg);
+            outline: none;
+            transition: border-color 0.2s;
         }
 
-        .connection-status.disconnected {
-            background: #ffebee;
-            color: #c62828;
+        .field-group input:focus {
+            border-color: var(--green-bright);
+            background: #fff;
         }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
+        .field-hint {
+            font-size: 11px;
+            color: var(--ink-light);
+            margin-top: 5px;
+        }
+
+        .connect-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--green-mid);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .connect-btn:hover { background: var(--green-deep); }
+        .connect-btn:active { transform: scale(0.98); }
+
+        .connect-btn .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        .connect-btn.loading .spinner { display: block; }
+        .connect-btn.loading .btn-text { display: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .modal-error {
+            font-size: 13px;
+            color: var(--red);
+            background: #fdf0f0;
+            border: 1px solid #f5c6c6;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .security-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 12px;
+            background: var(--green-wash);
+            border-radius: 8px;
+            border: 1px solid #c5e0c2;
+        }
+
+        .security-note .icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+        .security-note p { font-size: 12px; color: var(--ink-mid); line-height: 1.5; margin: 0; }
+
+        /* ── DASHBOARD ── */
+        .dashboard { display: none; }
+        .dashboard.visible { display: block; }
+
+        .topbar {
+            background: var(--green-deep);
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .topbar-brand .leaf {
+            width: 28px;
+            height: 28px;
+            background: var(--green-bright);
+            border-radius: 50% 50% 50% 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .topbar-brand span {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 16px;
+            color: #fff;
+            letter-spacing: 0.01em;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .mqtt-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--body);
+            transition: all 0.3s;
+        }
+
+        .mqtt-badge.connecting {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+        }
+
+        .mqtt-badge.connected {
+            background: rgba(76, 175, 80, 0.2);
+            color: #a8d5a2;
+        }
+
+        .mqtt-badge.disconnected {
+            background: rgba(217, 79, 79, 0.2);
+            color: #f5a0a0;
+        }
+
+        .mqtt-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: currentColor;
+        }
+
+        .mqtt-badge.connected .mqtt-dot {
             animation: pulse 2s infinite;
         }
 
-        .disconnected .status-dot {
-            animation: none;
-        }
-
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #c5e1c5;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .stat-card h3 {
+        .disconnect-btn {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.6);
+            padding: 5px 12px;
+            border-radius: 6px;
             font-size: 12px;
-            font-weight: 500;
-            color: #5a6a5a;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            cursor: pointer;
+            font-family: var(--body);
+            transition: all 0.2s;
         }
 
-        .stat-card .value {
+        .disconnect-btn:hover {
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+
+        .main {
+            padding: 32px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .page-heading {
+            margin-bottom: 28px;
+        }
+
+        .page-heading h2 {
+            font-family: var(--display);
             font-size: 28px;
             font-weight: 700;
-            color: #2e7d32;
+            color: var(--ink);
+            margin-bottom: 4px;
         }
 
-        .stat-card .value.deluge {
-            color: #f57c00;
+        .page-heading p {
+            font-size: 14px;
+            color: var(--ink-light);
         }
 
-        .stat-card .value.inactive {
-            color: #7b1fa2;
-        }
-
-        .stat-card .subtext {
+        .page-heading .aio-user {
+            font-family: var(--mono);
             font-size: 12px;
-            color: #6a7a6a;
-            margin-top: 4px;
+            color: var(--green-mid);
+            background: var(--green-wash);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #c5e0c2;
         }
 
-        .data-panel {
-            background: #ffffff;
-            border-radius: 12px;
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 500px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .main { padding: 20px 16px; }
+            .topbar { padding: 0 16px; }
+        }
+
+        .stat-tile {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 20px 22px;
+            border: 1px solid var(--border);
+            position: relative;
             overflow: hidden;
-            border: 1px solid #c5e1c5;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            animation: fadeUp 0.4s ease both;
         }
 
-        .panel-header {
+        .stat-tile::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .stat-tile.green::before { background: var(--green-bright); }
+        .stat-tile.purple::before { background: #9c6ade; }
+        .stat-tile.amber::before { background: var(--amber); }
+        .stat-tile.blue::before { background: var(--blue); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-tile:nth-child(1) { animation-delay: 0.05s; }
+        .stat-tile:nth-child(2) { animation-delay: 0.1s; }
+        .stat-tile:nth-child(3) { animation-delay: 0.15s; }
+        .stat-tile:nth-child(4) { animation-delay: 0.2s; }
+
+        .stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--ink-light);
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-family: var(--display);
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-tile.green .stat-number { color: var(--green-mid); }
+        .stat-tile.purple .stat-number { color: #7b4fbf; }
+        .stat-tile.amber .stat-number { color: #b07a10; }
+        .stat-tile.blue .stat-number { color: var(--blue); }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--ink-light);
+        }
+
+        /* Actuator status */
+        .actuator-bar {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            background: #f1f8e9;
-            border-bottom: 1px solid #c5e1c5;
+            gap: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
         }
 
-        .panel-header h2 {
+        .actuator-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink-mid);
+            transition: all 0.3s;
+        }
+
+        .actuator-chip.active {
+            background: #fff8e6;
+            border-color: #f0d080;
+            color: #8a5c00;
+        }
+
+        .actuator-icon {
             font-size: 16px;
-            font-weight: 600;
-            color: #2e7d32;
+        }
+
+        .actuator-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: background 0.3s;
+        }
+
+        .actuator-chip.active .actuator-dot {
+            background: var(--amber);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Table panel */
+        .panel {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            animation: fadeUp 0.4s 0.25s ease both;
+        }
+
+        .panel-head {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--green-wash);
+        }
+
+        .panel-head h3 {
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--green-deep);
+        }
+
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--green-mid);
+            font-weight: 500;
+        }
+
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--green-bright);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
         }
 
         .data-table {
@@ -158,207 +520,324 @@
             border-collapse: collapse;
         }
 
-        .data-table thead {
-            background: #f1f8e9;
-        }
-
-        .data-table th {
-            padding: 12px 16px;
+        .data-table thead th {
+            padding: 11px 20px;
             text-align: left;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            color: #5a6a5a;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #c5e1c5;
+            letter-spacing: 0.07em;
+            color: var(--ink-light);
+            border-bottom: 1px solid var(--border);
+            background: var(--green-wash);
+            white-space: nowrap;
         }
 
-        .data-table td {
-            padding: 14px 16px;
+        .data-table tbody td {
+            padding: 14px 20px;
             font-size: 14px;
-            border-bottom: 1px solid #e0e8e0;
-            color: #2d3a2d;
+            border-bottom: 1px solid #eef4ea;
+            vertical-align: middle;
         }
 
-        .data-table tbody tr:hover {
-            background: #f5f9f0;
+        .data-table tbody tr:last-child td { border-bottom: none; }
+
+        .data-table tbody tr {
+            transition: background 0.15s;
+            animation: rowIn 0.3s ease both;
         }
 
-        .data-table tbody tr:last-child td {
-            border-bottom: none;
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateX(-6px); }
+            to { opacity: 1; transform: translateX(0); }
         }
+
+        .data-table tbody tr:hover { background: #f5fbf2; }
 
         .sensor-id {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: #2e7d32;
-        }
-
-        .location-name {
+            font-family: var(--mono);
+            font-size: 13px;
             font-weight: 500;
-            color: #2d3a2d;
+            color: var(--green-mid);
+            background: var(--green-wash);
+            padding: 3px 8px;
+            border-radius: 5px;
+            border: 1px solid #c5e0c2;
         }
 
-        .node-status {
+        .location-tag {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .day-badge, .night-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             padding: 4px 10px;
-            border-radius: 12px;
+            border-radius: 20px;
             font-size: 12px;
             font-weight: 500;
         }
 
-        .node-status.active {
-            background: #e8f5e0;
-            color: #2e7d32;
-        }
-
-        .node-status.silent {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .node-status.daytime {
+        .day-badge {
             background: #fff8e1;
-            color: #ef6c00;
+            color: #e65100;
+            border: 1px solid #ffe0a0;
         }
 
-        .node-status.nighttime {
+        .night-badge {
             background: #e8eaf6;
             color: #3949ab;
+            border: 1px solid #c5c9e8;
         }
 
-        .node-status .status-indicator {
+        .tx-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tx-badge.transmitting {
+            background: var(--green-wash);
+            color: var(--green-mid);
+            border: 1px solid #c5e0c2;
+        }
+
+        .tx-badge.silent {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            border: 1px solid #ddb8f0;
+        }
+
+        .tx-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
             background: currentColor;
         }
 
-        .node-status.active .status-indicator {
-            animation: blink 1s infinite;
+        .tx-badge.transmitting .tx-dot {
+            animation: pulse 1.2s infinite;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .temp-value {
-            color: #e65100;
-        }
-
-        .humidity-value {
-            color: #0277bd;
-        }
-
-        .timestamp {
-            color: #5a6a5a;
-            font-size: 13px;
-        }
-
-        .waiting-message {
-            padding: 60px 20px;
-            text-align: center;
-            color: #5a6a5a;
-        }
-
-        .waiting-message .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.6;
-        }
-
-        .waiting-message p {
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-
-        .waiting-message .subtext {
-            font-size: 14px;
-            color: #7a8a7a;
-        }
+        .temp-val { color: #c84a1a; font-weight: 500; font-family: var(--mono); font-size: 14px; }
+        .hum-val  { color: #0d6eaa; font-weight: 500; font-family: var(--mono); font-size: 14px; }
+        .ts-val   { color: var(--ink-light); font-size: 12px; font-family: var(--mono); }
 
         .empty-state {
-            padding: 40px 20px;
+            padding: 64px 20px;
             text-align: center;
-            color: #7a8a7a;
+        }
+
+        .empty-icon {
+            font-size: 44px;
+            opacity: 0.35;
+            margin-bottom: 16px;
         }
 
         .empty-state p {
-            font-size: 14px;
+            font-family: var(--display);
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--ink-mid);
+            margin-bottom: 6px;
         }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 16px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 12px;
-                text-align: center;
-            }
-
-            .stats-row {
-                grid-template-columns: 1fr;
-            }
-
-            .data-table {
-                font-size: 13px;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 10px 12px;
-            }
+        .empty-state small {
+            font-size: 13px;
+            color: var(--ink-light);
         }
+
+        /* MQTT log */
+        .mqtt-log {
+            margin-top: 20px;
+            background: var(--green-deep);
+            border-radius: 12px;
+            overflow: hidden;
+            animation: fadeUp 0.4s 0.35s ease both;
+        }
+
+        .mqtt-log-head {
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .mqtt-log-head span {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--green-pale);
+            font-weight: 500;
+        }
+
+        .clear-log {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.4);
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--mono);
+            transition: all 0.2s;
+        }
+
+        .clear-log:hover { color: rgba(255,255,255,0.7); }
+
+        .mqtt-log-body {
+            padding: 12px 18px;
+            min-height: 80px;
+            max-height: 160px;
+            overflow-y: auto;
+            font-family: var(--mono);
+            font-size: 12px;
+        }
+
+        .log-line {
+            display: flex;
+            gap: 12px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            animation: logIn 0.2s ease;
+        }
+
+        @keyframes logIn {
+            from { opacity: 0; transform: translateY(-3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-line:last-child { border-bottom: none; }
+        .log-ts { color: rgba(255,255,255,0.25); flex-shrink: 0; }
+        .log-topic { color: #a8d5a2; flex-shrink: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .log-payload { color: rgba(255,255,255,0.6); }
+        .log-sys { color: rgba(255,255,255,0.3); font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <header class="header">
-            <h1>Smart Farm Server</h1>
-            <div class="connection-status disconnected" id="connectionStatus">
-                <span class="status-dot"></span>
-                <span>Searching for Arduino nodes...</span>
-            </div>
-        </header>
 
-        <div class="stats-row">
-            <div class="stat-card">
-                <h3>Active Nodes</h3>
-                <div class="value" id="activeNodes">0</div>
-                <div class="subtext">Transmitting now</div>
+<!-- CONNECTION MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+        <div class="modal-logo">
+            <div class="leaf">🌱</div>
+            <span>Smart Farm</span>
+        </div>
+        <h2>Connect to<br>Adafruit IO</h2>
+        <p>Enter your credentials to subscribe to live sensor feeds via MQTT over WebSocket.</p>
+
+        <div class="field-group">
+            <label>AIO Username</label>
+            <input type="text" id="aioUsername" placeholder="your-username" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="field-group">
+            <label>AIO Key</label>
+            <input type="password" id="aioKey" placeholder="aio_xxxxxxxxxxxxxxxxxxxx">
+            <div class="field-hint">Found in Adafruit IO → Account → My Key</div>
+        </div>
+        <div class="field-group">
+            <label>Feed prefix <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional, defaults to username)</span></label>
+            <input type="text" id="feedPrefix" placeholder="e.g. your-username/feeds/" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <div class="field-hint">Leave blank to use username/feeds/</div>
+        </div>
+
+        <button class="connect-btn" id="connectBtn" onclick="startConnect()">
+            <div class="spinner"></div>
+            <span class="btn-text">Connect to broker</span>
+        </button>
+        <div class="modal-error" id="modalError"></div>
+
+        <div class="security-note">
+            <span class="icon">🔒</span>
+            <p>Credentials are used only in this browser session and are never stored or committed to source code.</p>
+        </div>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+    <nav class="topbar">
+        <div class="topbar-brand">
+            <div class="leaf">🌱</div>
+            <span>Smart Farm Network</span>
+        </div>
+        <div class="topbar-right">
+            <div class="mqtt-badge connecting" id="mqttBadge">
+                <span class="mqtt-dot"></span>
+                <span id="mqttBadgeText">Connecting…</span>
             </div>
-            <div class="stat-card">
-                <h3>Silent Nodes</h3>
-                <div class="value inactive" id="silentNodes">0</div>
-                <div class="subtext">Nighttime / Low Light</div>
+            <button class="disconnect-btn" onclick="doDisconnect()">Disconnect</button>
+        </div>
+    </nav>
+
+    <main class="main">
+        <div class="page-heading">
+            <h2>Live Sensor Dashboard</h2>
+            <p>Subscribed as <span class="aio-user" id="aioUserDisplay">—</span> &nbsp;·&nbsp; MQTT over WebSocket &nbsp;·&nbsp; Adafruit IO broker</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-tile green">
+                <div class="stat-label">Active Nodes</div>
+                <div class="stat-number" id="activeNodes">0</div>
+                <div class="stat-sub">Transmitting now</div>
             </div>
-            <div class="stat-card">
-                <h3>Data Deluge Savings</h3>
-                <div class="value deluge" id="delugeCount">0</div>
-                <div class="subtext">Transmissions skipped</div>
+            <div class="stat-tile purple">
+                <div class="stat-label">Silent Nodes</div>
+                <div class="stat-number" id="silentNodes">0</div>
+                <div class="stat-sub">Nighttime / Low Light</div>
             </div>
-            <div class="stat-card">
-                <h3>Total Nodes</h3>
-                <div class="value" id="totalNodes">0</div>
-                <div class="subtext">Registered sensors</div>
+            <div class="stat-tile amber">
+                <div class="stat-label">Data Deluge Savings</div>
+                <div class="stat-number" id="delugeCount">0</div>
+                <div class="stat-sub">Transmissions skipped</div>
+            </div>
+            <div class="stat-tile blue">
+                <div class="stat-label">Total Nodes</div>
+                <div class="stat-number" id="totalNodes">0</div>
+                <div class="stat-sub">Registered sensors</div>
             </div>
         </div>
 
-        <div class="data-panel">
-            <div class="panel-header">
-                <h2>Sensor Data</h2>
+        <div class="actuator-bar">
+            <div class="actuator-chip" id="ledChip">
+                <span class="actuator-icon">💡</span>
+                <span>Red LED</span>
+                <span class="actuator-dot"></span>
+                <span class="actuator-state">OFF</span>
             </div>
-            <table class="data-table" id="sensorTable">
+            <div class="actuator-chip" id="piezoChip">
+                <span class="actuator-icon">🔔</span>
+                <span>Piezo Buzzer</span>
+                <span class="actuator-dot"></span>
+                <span class="actuator-state">OFF</span>
+            </div>
+            <div class="actuator-chip" id="dayNightChip">
+                <span class="actuator-icon">🌤</span>
+                <span id="dayNightLabel">Awaiting LDR…</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head">
+                <h3>Sensor Data</h3>
+                <div class="live-pill" id="livePill" style="display:none">
+                    <div class="live-dot"></div>
+                    <span>Live</span>
+                </div>
+            </div>
+            <table class="data-table">
                 <thead>
                     <tr>
                         <th>Sensor ID</th>
                         <th>Location</th>
-                        <th>Day/Night</th>
+                        <th>Day / Night</th>
                         <th>Temperature (°C)</th>
                         <th>Humidity (%)</th>
                         <th>Status</th>
@@ -367,162 +846,351 @@
                 </thead>
                 <tbody id="sensorTableBody">
                     <tr>
-                        <td colspan="6">
-                            <div class="waiting-message">
-                                <div class="icon">📡</div>
-                                <p>Waiting for Arduino connection...</p>
-                                <div class="subtext">The dashboard will display sensor data once nodes connect</div>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">📡</div>
+                                <p>Waiting for sensor data…</p>
+                                <small>Data will appear once your Arduino starts publishing</small>
                             </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-    </div>
 
-    <script>
-        let lastData = null;
-        const API_ENDPOINT = '/api/sensors';
-        const NODE_ACTIVE_WINDOW_MS = 15000;
+        <div class="mqtt-log">
+            <div class="mqtt-log-head">
+                <span>// mqtt message log</span>
+                <button class="clear-log" onclick="clearLog()">clear</button>
+            </div>
+            <div class="mqtt-log-body" id="mqttLogBody">
+                <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-sys">Waiting for MQTT connection…</span></div>
+            </div>
+        </div>
+    </main>
+</div>
 
-        async function fetchSensorData() {
-            try {
-                const response = await fetch(API_ENDPOINT);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                lastData = data;
-                updateDashboard(data);
-            } catch (error) {
-                console.log('Waiting for data source...');
-                showDisconnected();
-            }
+<script>
+    // ── State ──
+    let mqttClient = null;
+    let sensors = {};       // keyed by sensor_id
+    let delugeCount = 0;
+    let feedPrefix = '';
+    const ACTIVE_WINDOW_MS = 15000;
+
+    // ── Modal logic ──
+    function startConnect() {
+        const username = document.getElementById('aioUsername').value.trim();
+        const key = document.getElementById('aioKey').value.trim();
+        const prefixInput = document.getElementById('feedPrefix').value.trim();
+
+        if (!username || !key) {
+            showModalError('Please enter both your AIO username and key.');
+            return;
         }
 
-        function showDisconnected() {
-            const statusEl = document.getElementById('connectionStatus');
-            statusEl.className = 'connection-status disconnected';
-            statusEl.innerHTML = `
-                <span class="status-dot"></span>
-                <span>Searching for Arduino nodes...</span>
-            `;
-            
-            document.getElementById('sensorTableBody').innerHTML = `
-                <tr>
-                    <td colspan="7">
-                        <div class="waiting-message">
-                            <div class="icon">📡</div>
-                            <p>Waiting for Arduino connection...</p>
-                            <div class="subtext">The dashboard will display sensor data once nodes connect</div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            
-            document.getElementById('activeNodes').textContent = '0';
-            document.getElementById('silentNodes').textContent = '0';
-            document.getElementById('delugeCount').textContent = '0';
-            document.getElementById('totalNodes').textContent = '0';
-        }
+        feedPrefix = prefixInput || `${username}/feeds/`;
+        if (!feedPrefix.endsWith('/')) feedPrefix += '/';
 
-        function updateDashboard(data) {
-            // Update connection status
-            const statusEl = document.getElementById('connectionStatus');
-            if (data.connected) {
-                statusEl.className = 'connection-status connected';
-                statusEl.innerHTML = `
-                    <span class="status-dot"></span>
-                    <span>Arduino Nodes Connected</span>
-                `;
-            } else {
-                showDisconnected();
-                return;
-            }
+        const btn = document.getElementById('connectBtn');
+        btn.classList.add('loading');
+        hideModalError();
 
-            // Calculate statistics
-            const sensors = data.sensors || [];
-            const activeNodes = sensors.filter(s => getNodeMode(s) === 'daytime').length;
-            const silentNodes = sensors.filter(s => getNodeMode(s) === 'nighttime').length;
-            const delugeCount = data.deluge_count || 0;
+        document.getElementById('aioUserDisplay').textContent = username;
+        connectMQTT(username, key);
+    }
 
-            // Update stat cards
-            document.getElementById('activeNodes').textContent = activeNodes;
-            document.getElementById('silentNodes').textContent = silentNodes;
-            document.getElementById('delugeCount').textContent = delugeCount;
-            document.getElementById('totalNodes').textContent = sensors.length;
+    function showModalError(msg) {
+        const el = document.getElementById('modalError');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
 
-            // Update table
-            const tbody = document.getElementById('sensorTableBody');
-            
-            if (sensors.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <p>No sensor data available yet</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
+    function hideModalError() {
+        document.getElementById('modalError').style.display = 'none';
+    }
 
-            tbody.innerHTML = sensors.map(sensor => {
-                const nodeMode = getNodeMode(sensor);
-                const isDay = nodeMode === 'daytime';
+    // ── MQTT ──
+    function connectMQTT(username, key) {
+        const clientId = 'smartfarm_' + Math.random().toString(36).substr(2, 8);
 
-                return `
-                    <tr>
-                        <td><span class="sensor-id">${sensor.sensor_id}</span></td>
-                        <td><span class="location-name">${sensor.location_name}</span></td>
-                        <td>
-                            <span class="node-status ${nodeMode}">
-                                <span class="status-indicator"></span>
-                                ${isDay ? 'Daytime' : 'Nighttime'}
-                            </span>
-                        </td>
-                        <td><span class="temp-value">${sensor.temperature !== null ? sensor.temperature.toFixed(1) : '--'}</span></td>
-                        <td><span class="humidity-value">${sensor.humidity !== null ? sensor.humidity.toFixed(1) : '--'}</span></td>
-                        <td>
-                            <span class="node-status ${isDay ? 'active' : 'silent'}">
-                                <span class="status-indicator"></span>
-                                ${isDay ? 'Transmitting' : 'Silent'}
-                            </span>
-                        </td>
-                        <td><span class="timestamp">${formatTimestamp(sensor.timestamp)}</span></td>
-                    </tr>
-                `;
-            }).join('');
-        }
+        mqttClient = mqtt.connect('wss://io.adafruit.com/mqtt', {
+            username: username,
+            password: key,
+            clientId: clientId,
+            keepalive: 30,
+            reconnectPeriod: 5000,
+            connectTimeout: 10000
+        });
 
-        function getNodeMode(sensor) {
-            if (!sensor || !sensor.timestamp) return 'nighttime';
-            const ts = new Date(sensor.timestamp).getTime();
-            if (Number.isNaN(ts)) return 'nighttime';
-            return (Date.now() - ts) <= NODE_ACTIVE_WINDOW_MS ? 'daytime' : 'nighttime';
-        }
+        mqttClient.on('connect', () => {
+            // Show dashboard
+            document.getElementById('modalBackdrop').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('visible');
+            document.getElementById('connectBtn').classList.remove('loading');
 
-        function formatTimestamp(timestamp) {
-            if (!timestamp) return '--';
-            const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return timestamp;
-            
-            return date.toLocaleString('en-PH', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
+            setBadge('connected', 'Connected to Adafruit IO');
+            document.getElementById('livePill').style.display = 'flex';
+            addLog(null, null, 'Connected to broker: io.adafruit.com');
+
+            // Subscribe to all relevant feeds
+            const feeds = [
+                'temperature', 'humidity', 'ldr-value',
+                'sensor-data', 'node-data',
+                'led-control', 'buzzer-control', 'pump-control'
+            ];
+
+            feeds.forEach(f => {
+                const topic = feedPrefix + f;
+                mqttClient.subscribe(topic, err => {
+                    if (!err) addLog(topic, null, `subscribed`);
+                });
             });
+
+            // Also subscribe to wildcard if Adafruit allows
+            const wildcard = feedPrefix + '#';
+            mqttClient.subscribe(wildcard);
+        });
+
+        mqttClient.on('message', (topic, message) => {
+            const payload = message.toString();
+            addLog(topic, payload);
+            handleMessage(topic, payload);
+        });
+
+        mqttClient.on('error', (err) => {
+            document.getElementById('connectBtn').classList.remove('loading');
+            setBadge('disconnected', 'Connection error');
+            const msg = err.message || String(err);
+            if (msg.includes('Not authorized') || msg.includes('auth')) {
+                showModalError('Invalid credentials. Check your AIO username and key.');
+                document.getElementById('modalBackdrop').classList.remove('hidden');
+                document.getElementById('dashboard').classList.remove('visible');
+            }
+            addLog(null, null, 'Error: ' + msg);
+        });
+
+        mqttClient.on('reconnect', () => {
+            setBadge('connecting', 'Reconnecting…');
+            addLog(null, null, 'Attempting reconnect…');
+        });
+
+        mqttClient.on('offline', () => {
+            setBadge('disconnected', 'Offline');
+            addLog(null, null, 'Client went offline');
+        });
+
+        mqttClient.on('close', () => {
+            setBadge('disconnected', 'Disconnected');
+        });
+    }
+
+    function handleMessage(topic, payload) {
+        const feedName = topic.split('/').pop();
+
+        // Actuator state display
+        if (feedName === 'led-control') {
+            setActuator('ledChip', payload.toUpperCase() === 'ON');
+            return;
+        }
+        if (feedName === 'buzzer-control') {
+            setActuator('piezoChip', payload.toUpperCase() === 'ON');
+            return;
         }
 
-        // Poll for data every 2 seconds
-        setInterval(fetchSensorData, 2000);
-        
-        // Initial fetch
-        fetchSensorData();
-    </script>
+        // Try parsing as JSON (multi-field payload)
+        let parsed = null;
+        try { parsed = JSON.parse(payload); } catch(e) {}
+
+        if (parsed && parsed.sensor_id) {
+            // Structured JSON payload from Arduino
+            processSensorEntry(parsed);
+            return;
+        }
+
+        // Single-value feeds — update most recent row or create placeholder
+        if (feedName === 'temperature') {
+            updateLatestField('temperature', parseFloat(payload));
+        } else if (feedName === 'humidity') {
+            updateLatestField('humidity', parseFloat(payload));
+        } else if (feedName === 'ldr-value') {
+            updateLatestField('ldr', parseFloat(payload));
+            const isDay = parseFloat(payload) > 400;
+            updateDayNightChip(isDay);
+            setActuator('ledChip', isDay);
+            setActuator('piezoChip', isDay);
+        }
+
+        renderTable();
+    }
+
+    function processSensorEntry(data) {
+        const id = data.sensor_id || 'NODE_01';
+        sensors[id] = {
+            sensor_id: id,
+            location_name: data.location || data.location_name || 'Unknown',
+            temperature: data.temperature !== undefined ? parseFloat(data.temperature) : null,
+            humidity: data.humidity !== undefined ? parseFloat(data.humidity) : null,
+            ldr: data.ldr !== undefined ? parseFloat(data.ldr) : null,
+            is_day: data.is_day !== undefined ? data.is_day : true,
+            timestamp: new Date().toISOString()
+        };
+        if (data.is_day === false) delugeCount++;
+        renderTable();
+    }
+
+    function updateLatestField(field, value) {
+        const keys = Object.keys(sensors);
+        if (keys.length === 0) {
+            sensors['NODE_01'] = {
+                sensor_id: 'NODE_01',
+                location_name: '—',
+                temperature: null,
+                humidity: null,
+                ldr: null,
+                is_day: true,
+                timestamp: new Date().toISOString()
+            };
+        }
+        const lastKey = keys[keys.length - 1] || 'NODE_01';
+        sensors[lastKey][field] = value;
+        sensors[lastKey].timestamp = new Date().toISOString();
+    }
+
+    function updateDayNightChip(isDay) {
+        const chip = document.getElementById('dayNightChip');
+        const label = document.getElementById('dayNightLabel');
+        if (isDay) {
+            chip.querySelector('.actuator-icon').textContent = '☀️';
+            label.textContent = 'Daytime detected';
+            chip.classList.add('active');
+        } else {
+            chip.querySelector('.actuator-icon').textContent = '🌙';
+            label.textContent = 'Nighttime — silent mode';
+            chip.classList.remove('active');
+        }
+    }
+
+    function setActuator(chipId, on) {
+        const chip = document.getElementById(chipId);
+        const stateEl = chip.querySelector('.actuator-state');
+        if (on) {
+            chip.classList.add('active');
+            if (stateEl) stateEl.textContent = 'ON';
+        } else {
+            chip.classList.remove('active');
+            if (stateEl) stateEl.textContent = 'OFF';
+        }
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('sensorTableBody');
+        const entries = Object.values(sensors);
+
+        let active = 0, silent = 0;
+        entries.forEach(s => {
+            const age = Date.now() - new Date(s.timestamp).getTime();
+            if (age <= ACTIVE_WINDOW_MS) active++; else silent++;
+        });
+
+        document.getElementById('activeNodes').textContent = active;
+        document.getElementById('silentNodes').textContent = silent;
+        document.getElementById('delugeCount').textContent = delugeCount;
+        document.getElementById('totalNodes').textContent = entries.length;
+
+        if (entries.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📡</div><p>Waiting for sensor data…</p><small>Data will appear once your Arduino starts publishing</small></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = entries.map((s, i) => {
+            const age = Date.now() - new Date(s.timestamp).getTime();
+            const isRecent = age <= ACTIVE_WINDOW_MS;
+            const isDay = s.is_day !== undefined ? s.is_day : isRecent;
+            const delay = i * 0.05;
+            return `
+            <tr style="animation-delay:${delay}s">
+                <td><span class="sensor-id">${s.sensor_id}</span></td>
+                <td><span class="location-tag">${s.location_name}</span></td>
+                <td>
+                    <span class="${isDay ? 'day-badge' : 'night-badge'}">
+                        ${isDay ? '☀️ Day' : '🌙 Night'}
+                    </span>
+                </td>
+                <td><span class="temp-val">${s.temperature !== null && s.temperature !== undefined ? s.temperature.toFixed(1) + ' °C' : '—'}</span></td>
+                <td><span class="hum-val">${s.humidity !== null && s.humidity !== undefined ? s.humidity.toFixed(1) + ' %' : '—'}</span></td>
+                <td>
+                    <span class="tx-badge ${isRecent ? 'transmitting' : 'silent'}">
+                        <span class="tx-dot"></span>
+                        ${isRecent ? 'Transmitting' : 'Silent'}
+                    </span>
+                </td>
+                <td><span class="ts-val">${formatTs(s.timestamp)}</span></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function formatTs(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        if (isNaN(d)) return ts;
+        return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    }
+
+    // ── MQTT log ──
+    function addLog(topic, payload, sys) {
+        const body = document.getElementById('mqttLogBody');
+        const now = new Date().toLocaleTimeString('en-PH', { hour12: false });
+
+        // Remove placeholder
+        const placeholder = body.querySelector('.log-sys');
+        if (placeholder && placeholder.textContent.includes('Waiting')) placeholder.closest('.log-line').remove();
+
+        const line = document.createElement('div');
+        line.className = 'log-line';
+
+        if (sys) {
+            line.innerHTML = `<span class="log-ts">${now}</span><span class="log-sys">${sys}</span>`;
+        } else {
+            const shortTopic = topic ? topic.split('/').slice(-2).join('/') : '';
+            const shortPayload = payload ? (payload.length > 60 ? payload.substr(0, 60) + '…' : payload) : '';
+            line.innerHTML = `<span class="log-ts">${now}</span><span class="log-topic">${shortTopic}</span><span class="log-payload">${shortPayload}</span>`;
+        }
+
+        body.prepend(line);
+        while (body.children.length > 30) body.removeChild(body.lastChild);
+    }
+
+    function clearLog() {
+        document.getElementById('mqttLogBody').innerHTML = '<div class="log-line"><span class="log-ts">--:--:--</span><span class="log-sys">Log cleared</span></div>';
+    }
+
+    // ── Helpers ──
+    function setBadge(state, text) {
+        const badge = document.getElementById('mqttBadge');
+        badge.className = 'mqtt-badge ' + state;
+        document.getElementById('mqttBadgeText').textContent = text;
+    }
+
+    function doDisconnect() {
+        if (mqttClient) { mqttClient.end(true); mqttClient = null; }
+        sensors = {}; delugeCount = 0;
+        document.getElementById('dashboard').classList.remove('visible');
+        document.getElementById('modalBackdrop').classList.remove('hidden');
+        document.getElementById('connectBtn').classList.remove('loading');
+        document.getElementById('aioKey').value = '';
+        hideModalError();
+    }
+
+    // Allow Enter key to connect
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !document.getElementById('modalBackdrop').classList.contains('hidden')) {
+            startConnect();
+        }
+    });
+
+    // Periodically refresh table to update "transmitting/silent" status
+    setInterval(() => { if (Object.keys(sensors).length > 0) renderTable(); }, 5000);
+</script>
 </body>
 </html>
