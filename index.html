@@ -42,7 +42,10 @@
         .modal-backdrop {
             position: fixed;
             inset: 0;
-            background: rgba(20, 40, 20, 0.72);
+            background-image: url('images/smart-farm-bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             backdrop-filter: blur(6px);
             display: flex;
             align-items: center;
@@ -56,9 +59,9 @@
         .modal {
             background: var(--surface);
             border-radius: 20px;
-            padding: 40px;
+            padding: 28px 32px;
             width: 100%;
-            max-width: 440px;
+            max-width: 560px;
             border: 1px solid var(--border);
             box-shadow: 0 32px 80px rgba(0,0,0,0.18);
             animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -69,11 +72,44 @@
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
+        .account-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+
+        .account-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ink-mid);
+            margin-bottom: 10px;
+        }
+
+        .account-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
         .modal-logo {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 28px;
+            margin-bottom: 16px;
+        }
+
+        .account-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
 
         .modal-logo .leaf {
@@ -96,41 +132,41 @@
 
         .modal h2 {
             font-family: var(--display);
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 700;
             color: var(--ink);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             line-height: 1.2;
         }
 
         .modal p {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--ink-light);
-            margin-bottom: 28px;
-            line-height: 1.6;
+            margin-bottom: 16px;
+            line-height: 1.5;
         }
 
         .field-group {
-            margin-bottom: 16px;
+            margin-bottom: 10px;
         }
 
         .field-group label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.06em;
             color: var(--ink-mid);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .field-group input {
             width: 100%;
-            padding: 12px 14px;
+            padding: 9px 11px;
             border: 1.5px solid var(--border);
-            border-radius: 10px;
+            border-radius: 8px;
             font-family: var(--mono);
-            font-size: 14px;
+            font-size: 13px;
             color: var(--ink);
             background: var(--bg);
             outline: none;
@@ -150,7 +186,7 @@
 
         .connect-btn {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: var(--green-mid);
             color: #fff;
             border: none;
@@ -200,8 +236,8 @@
             display: flex;
             align-items: flex-start;
             gap: 8px;
-            margin-top: 20px;
-            padding: 12px;
+            margin-top: 12px;
+            padding: 10px 12px;
             background: var(--green-wash);
             border-radius: 8px;
             border: 1px solid #c5e0c2;
@@ -730,26 +766,42 @@
             <span>Smart Farm</span>
         </div>
         <h2>Connect to<br>Adafruit IO</h2>
-        <p>Enter your credentials to subscribe to live sensor feeds via MQTT over WebSocket.</p>
+        <p>Two accounts required — each connects its own MQTT client to the broker.</p>
 
-        <div class="field-group">
-            <label>AIO Username</label>
-            <input type="text" id="aioUsername" placeholder="your-username" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <div class="account-block">
+            <div class="account-label">
+                <span class="account-dot" style="background:#2d6a2d"></span>
+                Account 1 — North &amp; West fields
+            </div>
+            <div class="field-group">
+                <label>AIO Username</label>
+                <input type="text" id="aioUsername1" placeholder="north-west-account" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+                <label>AIO Key</label>
+                <input type="password" id="aioKey1" placeholder="aio_xxxxxxxxxxxxxxxxxxxx">
+            </div>
         </div>
-        <div class="field-group">
-            <label>AIO Key</label>
-            <input type="password" id="aioKey" placeholder="aio_xxxxxxxxxxxxxxxxxxxx">
-            <div class="field-hint">Found in Adafruit IO → Account → My Key</div>
-        </div>
-        <div class="field-group">
-            <label>Feed prefix <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional, defaults to username)</span></label>
-            <input type="text" id="feedPrefix" placeholder="e.g. your-username/feeds/" autocomplete="off" autocapitalize="off" spellcheck="false">
-            <div class="field-hint">Leave blank to use username/feeds/</div>
+
+        <div class="account-block">
+            <div class="account-label">
+                <span class="account-dot" style="background:#3a7bd5"></span>
+                Account 2 — South &amp; East fields
+            </div>
+            <div class="field-group">
+                <label>AIO Username</label>
+                <input type="text" id="aioUsername2" placeholder="south-east-account" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+                <label>AIO Key</label>
+                <input type="password" id="aioKey2" placeholder="aio_xxxxxxxxxxxxxxxxxxxx">
+                <div class="field-hint">Found in Adafruit IO → Account → My Key</div>
+            </div>
         </div>
 
         <button class="connect-btn" id="connectBtn" onclick="startConnect()">
             <div class="spinner"></div>
-            <span class="btn-text">Connect to broker</span>
+            <span class="btn-text">Connect both brokers</span>
         </button>
         <div class="modal-error" id="modalError"></div>
 
@@ -872,32 +924,39 @@
 
 <script>
     // ── State ──
-    let mqttClient = null;
-    let sensors = {};       // keyed by sensor_id
+    let mqttClients = { acct1: null, acct2: null };
+    let connectedCount = 0;
+    let sensors = {};
     let delugeCount = 0;
-    let feedPrefix = '';
     const ACTIVE_WINDOW_MS = 15000;
+    const DAYTIME_THRESHOLD = 100;
+
+    // Node definitions: feed-prefix → { id, location, account }
+    const NODE_MAP = {
+        'north-field': { id: 'arduino-north', location: 'North Field', acct: 'acct1' },
+        'west-field':  { id: 'arduino-west',  location: 'West Field',  acct: 'acct1' },
+        'south-field': { id: 'arduino-south', location: 'South Field', acct: 'acct2' },
+        'east-field':  { id: 'arduino-east',  location: 'East Field',  acct: 'acct2' },
+    };
 
     // ── Modal logic ──
     function startConnect() {
-        const username = document.getElementById('aioUsername').value.trim();
-        const key = document.getElementById('aioKey').value.trim();
-        const prefixInput = document.getElementById('feedPrefix').value.trim();
+        const u1 = document.getElementById('aioUsername1').value.trim();
+        const k1 = document.getElementById('aioKey1').value.trim();
+        const u2 = document.getElementById('aioUsername2').value.trim();
+        const k2 = document.getElementById('aioKey2').value.trim();
 
-        if (!username || !key) {
-            showModalError('Please enter both your AIO username and key.');
+        if (!u1 || !k1 || !u2 || !k2) {
+            showModalError('Please fill in all four fields for both accounts.');
             return;
         }
 
-        feedPrefix = prefixInput || `${username}/feeds/`;
-        if (!feedPrefix.endsWith('/')) feedPrefix += '/';
-
-        const btn = document.getElementById('connectBtn');
-        btn.classList.add('loading');
+        document.getElementById('connectBtn').classList.add('loading');
         hideModalError();
+        connectedCount = 0;
 
-        document.getElementById('aioUserDisplay').textContent = username;
-        connectMQTT(username, key);
+        connectMQTT('acct1', u1, k1, ['north-field', 'west-field']);
+        connectMQTT('acct2', u2, k2, ['south-field', 'east-field']);
     }
 
     function showModalError(msg) {
@@ -911,10 +970,10 @@
     }
 
     // ── MQTT ──
-    function connectMQTT(username, key) {
-        const clientId = 'smartfarm_' + Math.random().toString(36).substr(2, 8);
+    function connectMQTT(acctKey, username, key, fieldPrefixes) {
+        const clientId = 'smartfarm_' + acctKey + '_' + Math.random().toString(36).substr(2, 6);
 
-        mqttClient = mqtt.connect('wss://io.adafruit.com/mqtt', {
+        const client = mqtt.connect('wss://io.adafruit.com/mqtt', {
             username: username,
             password: key,
             clientId: clientId,
@@ -923,208 +982,184 @@
             connectTimeout: 10000
         });
 
-        mqttClient.on('connect', () => {
-            // Show dashboard
-            document.getElementById('modalBackdrop').classList.add('hidden');
-            document.getElementById('dashboard').classList.add('visible');
-            document.getElementById('connectBtn').classList.remove('loading');
+        mqttClients[acctKey] = client;
 
-            setBadge('connected', 'Connected to Adafruit IO');
-            document.getElementById('livePill').style.display = 'flex';
-            addLog(null, null, 'Connected to broker: io.adafruit.com');
+        client.on('connect', () => {
+            connectedCount++;
+            addLog(null, null, `[${acctKey}] Connected as ${username}`);
 
-            // Subscribe to all relevant feeds
-            const feeds = [
-                'temperature', 'humidity', 'ldr-value',
-                'sensor-data', 'node-data',
-                'led-control', 'buzzer-control', 'pump-control'
-            ];
-
-            feeds.forEach(f => {
-                const topic = feedPrefix + f;
-                mqttClient.subscribe(topic, err => {
-                    if (!err) addLog(topic, null, `subscribed`);
+            // Subscribe to all feeds for this account's nodes
+            fieldPrefixes.forEach(prefix => {
+                ['temperature', 'humidity', 'light', 'led'].forEach(feed => {
+                    const topic = `${username}/feeds/${prefix}-${feed}`;
+                    client.subscribe(topic, err => {
+                        if (!err) addLog(topic, null, 'subscribed');
+                    });
                 });
             });
 
-            // Also subscribe to wildcard if Adafruit allows
-            const wildcard = feedPrefix + '#';
-            mqttClient.subscribe(wildcard);
+            // Both clients connected — show dashboard
+            if (connectedCount === 2) {
+                document.getElementById('modalBackdrop').classList.add('hidden');
+                document.getElementById('dashboard').classList.add('visible');
+                document.getElementById('connectBtn').classList.remove('loading');
+                document.getElementById('livePill').style.display = 'flex';
+                setBadge('connected', 'Both brokers connected');
+                // Show account usernames in topbar
+                document.getElementById('aioUserDisplay').textContent =
+                    document.getElementById('aioUsername1').value.trim() + ' · ' +
+                    document.getElementById('aioUsername2').value.trim();
+            } else {
+                setBadge('connecting', 'Connecting second broker…');
+            }
         });
 
-        mqttClient.on('message', (topic, message) => {
+        client.on('message', (topic, message) => {
             const payload = message.toString();
             addLog(topic, payload);
             handleMessage(topic, payload);
         });
 
-        mqttClient.on('error', (err) => {
+        client.on('error', (err) => {
             document.getElementById('connectBtn').classList.remove('loading');
             setBadge('disconnected', 'Connection error');
             const msg = err.message || String(err);
             if (msg.includes('Not authorized') || msg.includes('auth')) {
-                showModalError('Invalid credentials. Check your AIO username and key.');
+                showModalError(`[${acctKey}] Invalid credentials — check username and key.`);
                 document.getElementById('modalBackdrop').classList.remove('hidden');
                 document.getElementById('dashboard').classList.remove('visible');
+                connectedCount = 0;
             }
-            addLog(null, null, 'Error: ' + msg);
+            addLog(null, null, `[${acctKey}] Error: ` + msg);
         });
 
-        mqttClient.on('reconnect', () => {
-            setBadge('connecting', 'Reconnecting…');
-            addLog(null, null, 'Attempting reconnect…');
+        client.on('reconnect', () => {
+            setBadge('connecting', `[${acctKey}] Reconnecting…`);
+            addLog(null, null, `[${acctKey}] Reconnecting…`);
         });
 
-        mqttClient.on('offline', () => {
-            setBadge('disconnected', 'Offline');
-            addLog(null, null, 'Client went offline');
-        });
-
-        mqttClient.on('close', () => {
-            setBadge('disconnected', 'Disconnected');
+        client.on('offline',  () => addLog(null, null, `[${acctKey}] Offline`));
+        client.on('close',    () => {
+            connectedCount = Math.max(0, connectedCount - 1);
+            if (connectedCount < 2) setBadge('disconnected', 'Broker disconnected');
         });
     }
 
     function handleMessage(topic, payload) {
-        const feedName = topic.split('/').pop();
+        // topic format: username/feeds/prefix-feedtype
+        const parts = topic.split('/');
+        const feedFull = parts[parts.length - 1]; // e.g. "north-field-temperature"
 
-        // Actuator state display
-        if (feedName === 'led-control') {
-            setActuator('ledChip', payload.toUpperCase() === 'ON');
+        // Match against known node prefixes
+        let matchedPrefix = null;
+        for (const prefix of Object.keys(NODE_MAP)) {
+            if (feedFull.startsWith(prefix + '-')) {
+                matchedPrefix = prefix;
+                break;
+            }
+        }
+        if (!matchedPrefix) return;
+
+        const node = NODE_MAP[matchedPrefix];
+        const feedType = feedFull.slice(matchedPrefix.length + 1); // "temperature", "humidity", etc.
+
+        if (feedType === 'led') {
+            const isOn = payload.trim() === '1';
+            // Update actuator chips for this node's location
+            updateActuatorChips(node.id, isOn);
             return;
         }
-        if (feedName === 'buzzer-control') {
-            setActuator('piezoChip', payload.toUpperCase() === 'ON');
-            return;
-        }
 
-        // Try parsing as JSON (multi-field payload)
-        let parsed = null;
-        try { parsed = JSON.parse(payload); } catch(e) {}
-
-        if (parsed && parsed.sensor_id) {
-            // Structured JSON payload from Arduino
-            processSensorEntry(parsed);
-            return;
-        }
-
-        // Single-value feeds — update most recent row or create placeholder
-        if (feedName === 'temperature') {
-            updateLatestField('temperature', parseFloat(payload));
-        } else if (feedName === 'humidity') {
-            updateLatestField('humidity', parseFloat(payload));
-        } else if (feedName === 'ldr-value') {
-            updateLatestField('ldr', parseFloat(payload));
-            const isDay = parseFloat(payload) > 400;
-            updateDayNightChip(isDay);
-            setActuator('ledChip', isDay);
-            setActuator('piezoChip', isDay);
+        if (feedType === 'temperature') {
+            upsertSensor(node.id, node.location, 'temperature', parseFloat(payload));
+        } else if (feedType === 'humidity') {
+            upsertSensor(node.id, node.location, 'humidity', parseFloat(payload));
+        } else if (feedType === 'light') {
+            const ldr = parseFloat(payload);
+            const wasDay = sensors[node.id] ? sensors[node.id].is_day : true;
+            const isDay  = ldr >= DAYTIME_THRESHOLD;
+            if (wasDay && !isDay) delugeCount++;
+            upsertSensor(node.id, node.location, 'ldr', ldr);
+            upsertSensor(node.id, node.location, 'is_day', isDay);
+            updateActuatorChips(node.id, isDay);
         }
 
         renderTable();
     }
 
-    function processSensorEntry(data) {
-        const id = data.sensor_id || 'NODE_01';
-        sensors[id] = {
-            sensor_id: id,
-            location_name: data.location || data.location_name || 'Unknown',
-            temperature: data.temperature !== undefined ? parseFloat(data.temperature) : null,
-            humidity: data.humidity !== undefined ? parseFloat(data.humidity) : null,
-            ldr: data.ldr !== undefined ? parseFloat(data.ldr) : null,
-            is_day: data.is_day !== undefined ? data.is_day : true,
-            timestamp: new Date().toISOString()
-        };
-        if (data.is_day === false) delugeCount++;
-        renderTable();
-    }
-
-    function updateLatestField(field, value) {
-        const keys = Object.keys(sensors);
-        if (keys.length === 0) {
-            sensors['NODE_01'] = {
-                sensor_id: 'NODE_01',
-                location_name: '—',
-                temperature: null,
-                humidity: null,
-                ldr: null,
-                is_day: true,
-                timestamp: new Date().toISOString()
-            };
+    function upsertSensor(id, location, field, value) {
+        if (!sensors[id]) {
+            sensors[id] = { sensor_id: id, location_name: location,
+                temperature: null, humidity: null, ldr: null,
+                is_day: true, timestamp: new Date().toISOString() };
         }
-        const lastKey = keys[keys.length - 1] || 'NODE_01';
-        sensors[lastKey][field] = value;
-        sensors[lastKey].timestamp = new Date().toISOString();
+        sensors[id][field] = value;
+        sensors[id].timestamp = new Date().toISOString();
     }
 
-    function updateDayNightChip(isDay) {
-        const chip = document.getElementById('dayNightChip');
-        const label = document.getElementById('dayNightLabel');
-        if (isDay) {
-            chip.querySelector('.actuator-icon').textContent = '☀️';
-            label.textContent = 'Daytime detected';
-            chip.classList.add('active');
-        } else {
-            chip.querySelector('.actuator-icon').textContent = '🌙';
-            label.textContent = 'Nighttime — silent mode';
-            chip.classList.remove('active');
+    // Each node has its own LED + piezo chip row in actuator bar
+    function updateActuatorChips(nodeId, isOn) {
+        // Generic: update the first LED and piezo chip if only one node active,
+        // or find node-specific chips if they exist
+        const ledEl   = document.getElementById('ledChip-'   + nodeId) || document.getElementById('ledChip');
+        const piezoEl = document.getElementById('piezoChip-' + nodeId) || document.getElementById('piezoChip');
+        const dayEl   = document.getElementById('dayChip-'   + nodeId) || document.getElementById('dayNightChip');
+
+        if (ledEl)   setActuator(ledEl, isOn);
+        if (piezoEl) setActuator(piezoEl, isOn);
+        if (dayEl) {
+            const label = dayEl.querySelector('.actuator-state') || dayEl.querySelector('#dayNightLabel');
+            if (isOn) {
+                dayEl.classList.add('active');
+                dayEl.querySelector('.actuator-icon').textContent = '☀️';
+                if (label) label.textContent = 'Daytime detected';
+            } else {
+                dayEl.classList.remove('active');
+                dayEl.querySelector('.actuator-icon').textContent = '🌙';
+                if (label) label.textContent = 'Nighttime — silent mode';
+            }
         }
     }
 
-    function setActuator(chipId, on) {
-        const chip = document.getElementById(chipId);
-        const stateEl = chip.querySelector('.actuator-state');
-        if (on) {
-            chip.classList.add('active');
-            if (stateEl) stateEl.textContent = 'ON';
-        } else {
-            chip.classList.remove('active');
-            if (stateEl) stateEl.textContent = 'OFF';
-        }
+    function setActuator(el, on) {
+        const stateEl = el.querySelector('.actuator-state');
+        if (on) { el.classList.add('active'); if (stateEl) stateEl.textContent = 'ON'; }
+        else    { el.classList.remove('active'); if (stateEl) stateEl.textContent = 'OFF'; }
     }
+
+    // Legacy compat
+    function updateDayNightChip(isDay) { updateActuatorChips('_generic', isDay); }
 
     function renderTable() {
         const tbody = document.getElementById('sensorTableBody');
         const entries = Object.values(sensors);
-
         let active = 0, silent = 0;
         entries.forEach(s => {
             const age = Date.now() - new Date(s.timestamp).getTime();
             if (age <= ACTIVE_WINDOW_MS) active++; else silent++;
         });
-
-        document.getElementById('activeNodes').textContent = active;
-        document.getElementById('silentNodes').textContent = silent;
-        document.getElementById('delugeCount').textContent = delugeCount;
-        document.getElementById('totalNodes').textContent = entries.length;
+        document.getElementById('activeNodes').textContent  = active;
+        document.getElementById('silentNodes').textContent  = silent;
+        document.getElementById('delugeCount').textContent  = delugeCount;
+        document.getElementById('totalNodes').textContent   = entries.length;
 
         if (entries.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📡</div><p>Waiting for sensor data…</p><small>Data will appear once your Arduino starts publishing</small></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📡</div><p>Waiting for sensor data…</p><small>Data will appear once your Arduinos start publishing</small></div></td></tr>`;
             return;
         }
 
         tbody.innerHTML = entries.map((s, i) => {
-            const age = Date.now() - new Date(s.timestamp).getTime();
+            const age     = Date.now() - new Date(s.timestamp).getTime();
             const isRecent = age <= ACTIVE_WINDOW_MS;
-            const isDay = s.is_day !== undefined ? s.is_day : isRecent;
-            const delay = i * 0.05;
+            const isDay   = s.is_day !== undefined ? s.is_day : isRecent;
             return `
-            <tr style="animation-delay:${delay}s">
+            <tr style="animation-delay:${i * 0.05}s">
                 <td><span class="sensor-id">${s.sensor_id}</span></td>
                 <td><span class="location-tag">${s.location_name}</span></td>
-                <td>
-                    <span class="${isDay ? 'day-badge' : 'night-badge'}">
-                        ${isDay ? '☀️ Day' : '🌙 Night'}
-                    </span>
-                </td>
-                <td><span class="temp-val">${s.temperature !== null && s.temperature !== undefined ? s.temperature.toFixed(1) + ' °C' : '—'}</span></td>
-                <td><span class="hum-val">${s.humidity !== null && s.humidity !== undefined ? s.humidity.toFixed(1) + ' %' : '—'}</span></td>
-                <td>
-                    <span class="tx-badge ${isRecent ? 'transmitting' : 'silent'}">
-                        <span class="tx-dot"></span>
-                        ${isRecent ? 'Transmitting' : 'Silent'}
-                    </span>
-                </td>
+                <td><span class="${isDay ? 'day-badge' : 'night-badge'}">${isDay ? '☀️ Day' : '🌙 Night'}</span></td>
+                <td><span class="temp-val">${s.temperature != null ? s.temperature.toFixed(1) + ' °C' : '—'}</span></td>
+                <td><span class="hum-val">${s.humidity != null ? s.humidity.toFixed(1) + ' %' : '—'}</span></td>
+                <td><span class="tx-badge ${isRecent ? 'transmitting' : 'silent'}"><span class="tx-dot"></span>${isRecent ? 'Transmitting' : 'Silent'}</span></td>
                 <td><span class="ts-val">${formatTs(s.timestamp)}</span></td>
             </tr>`;
         }).join('');
@@ -1140,23 +1175,18 @@
     // ── MQTT log ──
     function addLog(topic, payload, sys) {
         const body = document.getElementById('mqttLogBody');
-        const now = new Date().toLocaleTimeString('en-PH', { hour12: false });
-
-        // Remove placeholder
+        const now  = new Date().toLocaleTimeString('en-PH', { hour12: false });
         const placeholder = body.querySelector('.log-sys');
         if (placeholder && placeholder.textContent.includes('Waiting')) placeholder.closest('.log-line').remove();
-
         const line = document.createElement('div');
         line.className = 'log-line';
-
         if (sys) {
             line.innerHTML = `<span class="log-ts">${now}</span><span class="log-sys">${sys}</span>`;
         } else {
-            const shortTopic = topic ? topic.split('/').slice(-2).join('/') : '';
+            const shortTopic   = topic   ? topic.split('/').slice(-2).join('/') : '';
             const shortPayload = payload ? (payload.length > 60 ? payload.substr(0, 60) + '…' : payload) : '';
             line.innerHTML = `<span class="log-ts">${now}</span><span class="log-topic">${shortTopic}</span><span class="log-payload">${shortPayload}</span>`;
         }
-
         body.prepend(line);
         while (body.children.length > 30) body.removeChild(body.lastChild);
     }
@@ -1173,23 +1203,21 @@
     }
 
     function doDisconnect() {
-        if (mqttClient) { mqttClient.end(true); mqttClient = null; }
-        sensors = {}; delugeCount = 0;
+        Object.values(mqttClients).forEach(c => { if (c) c.end(true); });
+        mqttClients = { acct1: null, acct2: null };
+        sensors = {}; delugeCount = 0; connectedCount = 0;
         document.getElementById('dashboard').classList.remove('visible');
         document.getElementById('modalBackdrop').classList.remove('hidden');
         document.getElementById('connectBtn').classList.remove('loading');
-        document.getElementById('aioKey').value = '';
+        document.getElementById('aioKey1').value = '';
+        document.getElementById('aioKey2').value = '';
         hideModalError();
     }
 
-    // Allow Enter key to connect
     document.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !document.getElementById('modalBackdrop').classList.contains('hidden')) {
-            startConnect();
-        }
+        if (e.key === 'Enter' && !document.getElementById('modalBackdrop').classList.contains('hidden')) startConnect();
     });
 
-    // Periodically refresh table to update "transmitting/silent" status
     setInterval(() => { if (Object.keys(sensors).length > 0) renderTable(); }, 5000);
 </script>
 </body>
