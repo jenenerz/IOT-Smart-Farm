@@ -396,10 +396,12 @@
 
         @media (max-width: 900px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .node-actuator-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
 
         @media (max-width: 500px) {
             .stats-grid { grid-template-columns: 1fr; }
+            .node-actuator-grid { grid-template-columns: 1fr !important; }
             .main { padding: 20px 16px; }
             .topbar { padding: 0 16px; }
         }
@@ -464,22 +466,74 @@
             color: var(--ink-light);
         }
 
-        /* Actuator status */
-        .actuator-bar {
-            display: flex;
-            gap: 12px;
+        /* ── NODE ACTUATOR CARDS ── */
+        .node-actuator-section {
             margin-bottom: 28px;
-            flex-wrap: wrap;
+        }
+
+        .node-actuator-section-title {
+            font-family: var(--display);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--ink-light);
+            margin-bottom: 12px;
+        }
+
+        .node-actuator-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .node-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            animation: fadeUp 0.4s ease both;
+            transition: box-shadow 0.2s;
+        }
+
+        .node-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+
+        .node-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px 10px;
+            border-bottom: 1px solid var(--border);
+            background: var(--green-wash);
+        }
+
+        .node-card-name {
+            font-family: var(--display);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--green-deep);
+        }
+
+        .node-day-night {
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .node-card-body {
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .actuator-chip {
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 16px;
-            background: var(--surface);
+            padding: 9px 12px;
+            background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 9px;
             font-size: 13px;
             font-weight: 500;
             color: var(--ink-mid);
@@ -492,8 +546,20 @@
             color: #8a5c00;
         }
 
+        .actuator-chip.active-red {
+            background: #fff0f0;
+            border-color: #f5c0c0;
+            color: #8a1a1a;
+        }
+
         .actuator-icon {
-            font-size: 16px;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .actuator-label {
+            flex: 1;
+            font-size: 12px;
         }
 
         .actuator-dot {
@@ -501,13 +567,27 @@
             height: 7px;
             border-radius: 50%;
             background: var(--border);
+            flex-shrink: 0;
             transition: background 0.3s;
         }
 
-        .actuator-chip.active .actuator-dot {
-            background: var(--amber);
+        .actuator-chip.active .actuator-dot,
+        .actuator-chip.active-red .actuator-dot {
             animation: pulse 1.5s infinite;
         }
+
+        .actuator-chip.active-red .actuator-dot { background: var(--red); }
+        .actuator-chip.active .actuator-dot     { background: var(--amber); }
+
+        .actuator-state {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .actuator-chip.active-red .actuator-state { color: var(--red); }
+        .actuator-chip.active .actuator-state     { color: #b07a10; }
 
         /* Table panel */
         .panel {
@@ -857,24 +937,102 @@
             </div>
         </div>
 
-        <div class="actuator-bar">
-            <div class="actuator-chip" id="ledChip">
-                <span class="actuator-icon">💡</span>
-                <span>Red LED</span>
-                <span class="actuator-dot"></span>
-                <span class="actuator-state">OFF</span>
-            </div>
-            <div class="actuator-chip" id="piezoChip">
-                <span class="actuator-icon">🔔</span>
-                <span>Piezo Buzzer</span>
-                <span class="actuator-dot"></span>
-                <span class="actuator-state">OFF</span>
-            </div>
-            <div class="actuator-chip" id="dayNightChip">
-                <span class="actuator-icon">🌤</span>
-                <span id="dayNightLabel">Awaiting LDR…</span>
+        <!-- ── PER-NODE ACTUATOR CARDS ── -->
+        <div class="node-actuator-section">
+            <div class="node-actuator-section-title">Node Actuators</div>
+            <div class="node-actuator-grid">
+
+                <!-- North Field -->
+                <div class="node-card" style="animation-delay:0.05s">
+                    <div class="node-card-header">
+                        <span class="node-card-name">North Field</span>
+                        <span class="node-day-night" id="daynight-arduino-north"></span>
+                    </div>
+                    <div class="node-card-body">
+                        <div class="actuator-chip" id="led-arduino-north">
+                            <span class="actuator-icon">🚨</span>
+                            <span class="actuator-label">Red LED</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                        <div class="actuator-chip" id="piezo-arduino-north">
+                            <span class="actuator-icon">🔔</span>
+                            <span class="actuator-label">Piezo Buzzer</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- West Field -->
+                <div class="node-card" style="animation-delay:0.1s">
+                    <div class="node-card-header">
+                        <span class="node-card-name">West Field</span>
+                        <span class="node-day-night" id="daynight-arduino-west"></span>
+                    </div>
+                    <div class="node-card-body">
+                        <div class="actuator-chip" id="led-arduino-west">
+                            <span class="actuator-icon">🚨</span>
+                            <span class="actuator-label">Red LED</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                        <div class="actuator-chip" id="piezo-arduino-west">
+                            <span class="actuator-icon">🔔</span>
+                            <span class="actuator-label">Piezo Buzzer</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- South Field -->
+                <div class="node-card" style="animation-delay:0.15s">
+                    <div class="node-card-header">
+                        <span class="node-card-name">South Field</span>
+                        <span class="node-day-night" id="daynight-arduino-south"></span>
+                    </div>
+                    <div class="node-card-body">
+                        <div class="actuator-chip" id="led-arduino-south">
+                            <span class="actuator-icon">🚨</span>
+                            <span class="actuator-label">Red LED</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                        <div class="actuator-chip" id="piezo-arduino-south">
+                            <span class="actuator-icon">🔔</span>
+                            <span class="actuator-label">Piezo Buzzer</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- East Field -->
+                <div class="node-card" style="animation-delay:0.2s">
+                    <div class="node-card-header">
+                        <span class="node-card-name">East Field</span>
+                        <span class="node-day-night" id="daynight-arduino-east"></span>
+                    </div>
+                    <div class="node-card-body">
+                        <div class="actuator-chip" id="led-arduino-east">
+                            <span class="actuator-icon">🚨</span>
+                            <span class="actuator-label">Red LED</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                        <div class="actuator-chip" id="piezo-arduino-east">
+                            <span class="actuator-icon">🔔</span>
+                            <span class="actuator-label">Piezo Buzzer</span>
+                            <span class="actuator-dot"></span>
+                            <span class="actuator-state">OFF</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
+        <!-- ── END NODE ACTUATOR CARDS ── -->
 
         <div class="panel">
             <div class="panel-head">
@@ -989,8 +1147,9 @@
             addLog(null, null, `[${acctKey}] Connected as ${username}`);
 
             // Subscribe to all feeds for this account's nodes
+            // Includes: temperature, humidity, light, led, piezo
             fieldPrefixes.forEach(prefix => {
-                ['temperature', 'humidity', 'light', 'led'].forEach(feed => {
+                ['temperature', 'humidity', 'light', 'led', 'piezo'].forEach(feed => {
                     const topic = `${username}/feeds/${prefix}-${feed}`;
                     client.subscribe(topic, err => {
                         if (!err) addLog(topic, null, 'subscribed');
@@ -1005,7 +1164,6 @@
                 document.getElementById('connectBtn').classList.remove('loading');
                 document.getElementById('livePill').style.display = 'flex';
                 setBadge('connected', 'Both brokers connected');
-                // Show account usernames in topbar
                 document.getElementById('aioUserDisplay').textContent =
                     document.getElementById('aioUsername1').value.trim() + ' · ' +
                     document.getElementById('aioUsername2').value.trim();
@@ -1061,15 +1219,22 @@
         if (!matchedPrefix) return;
 
         const node = NODE_MAP[matchedPrefix];
-        const feedType = feedFull.slice(matchedPrefix.length + 1); // "temperature", "humidity", etc.
+        const feedType = feedFull.slice(matchedPrefix.length + 1); // "temperature", "humidity", "led", "piezo", etc.
 
+        // ── Actuator feeds ──
         if (feedType === 'led') {
             const isOn = payload.trim() === '1';
-            // Update actuator chips for this node's location
-            updateActuatorChips(node.id, isOn);
+            setNodeLED(node.id, isOn);
             return;
         }
 
+        if (feedType === 'piezo') {
+            const isOn = payload.trim() === '1';
+            setNodePiezo(node.id, isOn);
+            return;
+        }
+
+        // ── Sensor feeds ──
         if (feedType === 'temperature') {
             upsertSensor(node.id, node.location, 'temperature', parseFloat(payload));
         } else if (feedType === 'humidity') {
@@ -1081,7 +1246,8 @@
             if (wasDay && !isDay) delugeCount++;
             upsertSensor(node.id, node.location, 'ldr', ldr);
             upsertSensor(node.id, node.location, 'is_day', isDay);
-            updateActuatorChips(node.id, isDay);
+            // Update the day/night icon on this node's card
+            setNodeDayNight(node.id, isDay);
         }
 
         renderTable();
@@ -1097,38 +1263,41 @@
         sensors[id].timestamp = new Date().toISOString();
     }
 
-    // Each node has its own LED + piezo chip row in actuator bar
-    function updateActuatorChips(nodeId, isOn) {
-        // Generic: update the first LED and piezo chip if only one node active,
-        // or find node-specific chips if they exist
-        const ledEl   = document.getElementById('ledChip-'   + nodeId) || document.getElementById('ledChip');
-        const piezoEl = document.getElementById('piezoChip-' + nodeId) || document.getElementById('piezoChip');
-        const dayEl   = document.getElementById('dayChip-'   + nodeId) || document.getElementById('dayNightChip');
+    // ── Per-node actuator updaters ──
 
-        if (ledEl)   setActuator(ledEl, isOn);
-        if (piezoEl) setActuator(piezoEl, isOn);
-        if (dayEl) {
-            const label = dayEl.querySelector('.actuator-state') || dayEl.querySelector('#dayNightLabel');
-            if (isOn) {
-                dayEl.classList.add('active');
-                dayEl.querySelector('.actuator-icon').textContent = '☀️';
-                if (label) label.textContent = 'Daytime detected';
-            } else {
-                dayEl.classList.remove('active');
-                dayEl.querySelector('.actuator-icon').textContent = '🌙';
-                if (label) label.textContent = 'Nighttime — silent mode';
-            }
+    function setNodeLED(nodeId, isOn) {
+        const el = document.getElementById('led-' + nodeId);
+        if (!el) return;
+        const stateEl = el.querySelector('.actuator-state');
+        if (isOn) {
+            el.classList.remove('active');
+            el.classList.add('active-red');
+            if (stateEl) stateEl.textContent = 'ON';
+        } else {
+            el.classList.remove('active-red');
+            if (stateEl) stateEl.textContent = 'OFF';
         }
     }
 
-    function setActuator(el, on) {
+    function setNodePiezo(nodeId, isOn) {
+        const el = document.getElementById('piezo-' + nodeId);
+        if (!el) return;
         const stateEl = el.querySelector('.actuator-state');
-        if (on) { el.classList.add('active'); if (stateEl) stateEl.textContent = 'ON'; }
-        else    { el.classList.remove('active'); if (stateEl) stateEl.textContent = 'OFF'; }
+        if (isOn) {
+            el.classList.add('active');
+            if (stateEl) stateEl.textContent = 'ON';
+        } else {
+            el.classList.remove('active');
+            if (stateEl) stateEl.textContent = 'OFF';
+        }
     }
 
-    // Legacy compat
-    function updateDayNightChip(isDay) { updateActuatorChips('_generic', isDay); }
+    function setNodeDayNight(nodeId, isDay) {
+        const el = document.getElementById('daynight-' + nodeId);
+        if (!el) return;
+        el.textContent = isDay ? '☀️' : '🌙';
+        el.title = isDay ? 'Daytime' : 'Nighttime';
+    }
 
     function renderTable() {
         const tbody = document.getElementById('sensorTableBody');
@@ -1149,9 +1318,9 @@
         }
 
         tbody.innerHTML = entries.map((s, i) => {
-            const age     = Date.now() - new Date(s.timestamp).getTime();
+            const age      = Date.now() - new Date(s.timestamp).getTime();
             const isRecent = age <= ACTIVE_WINDOW_MS;
-            const isDay   = s.is_day !== undefined ? s.is_day : isRecent;
+            const isDay    = s.is_day !== undefined ? s.is_day : isRecent;
             return `
             <tr style="animation-delay:${i * 0.05}s">
                 <td><span class="sensor-id">${s.sensor_id}</span></td>
@@ -1212,6 +1381,12 @@
         document.getElementById('aioKey1').value = '';
         document.getElementById('aioKey2').value = '';
         hideModalError();
+        // Reset all actuator chips
+        ['arduino-north','arduino-west','arduino-south','arduino-east'].forEach(id => {
+            setNodeLED(id, false);
+            setNodePiezo(id, false);
+            setNodeDayNight(id, true);
+        });
     }
 
     document.addEventListener('keydown', e => {
