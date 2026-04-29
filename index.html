@@ -1151,7 +1151,7 @@
         tbody.innerHTML = entries.map((s, i) => {
             const age     = Date.now() - new Date(s.timestamp).getTime();
             const isRecent = age <= ACTIVE_WINDOW_MS;
-            const isDay   = s.is_day !== undefined ? s.is_day : isRecent;
+            const isDay   = isRecent;
             return `
             <tr style="animation-delay:${i * 0.05}s">
                 <td><span class="sensor-id">${s.sensor_id}</span></td>
