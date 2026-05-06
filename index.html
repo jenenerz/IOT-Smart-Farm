@@ -690,6 +690,39 @@
             color: var(--ink-light);
         }
 
+        /* Location Tabs */
+        .location-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .location-tab {
+            padding: 10px 16px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--ink-mid);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--body);
+        }
+
+        .location-tab:hover {
+            border-color: var(--green-mid);
+            color: var(--green-mid);
+        }
+
+        .location-tab.active {
+            background: var(--green-bright);
+            border-color: var(--green-bright);
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
         /* MQTT log */
         .mqtt-log {
             margin-top: 20px;
@@ -804,9 +837,17 @@
             </div>
         </div>
 
+        <div class="location-tabs">
+            <button class="location-tab active" data-location="all" onclick="setLocationFilter('all', this)">📊 All Locations</button>
+            <button class="location-tab" data-location="north" onclick="setLocationFilter('north', this)">🧭 North</button>
+            <button class="location-tab" data-location="south" onclick="setLocationFilter('south', this)">🧭 South</button>
+            <button class="location-tab" data-location="east" onclick="setLocationFilter('east', this)">🧭 East</button>
+            <button class="location-tab" data-location="west" onclick="setLocationFilter('west', this)">🧭 West</button>
+        </div>
+
         <div class="panel">
             <div class="panel-head">
-                <h3>Recent Database Rows</h3>
+                <h3>Recent Database Rows — All Locations</h3>
                 <div class="live-pill" id="livePill" style="display:none">
                     <div class="live-dot"></div>
                     <span>Live</span>
@@ -816,9 +857,9 @@
                 <thead>
                     <tr>
                         <th>Record ID</th>
-                        <th>Feed Name</th>
-                        <th>Value</th>
-                        <th>Created At</th>
+                        <th>Location</th>
+                        <th>Sensor Reading</th>
+                        <th>Recorded At</th>
                     </tr>
                 </thead>
                 <tbody id="sensorTableBody">
@@ -855,8 +896,16 @@
     let sensorLogs = [];
     let delugeCount = 0;
     let supabaseClient = null;
+    let currentLocationFilter = 'all';
     const ACTIVE_WINDOW_MS = 15000;
     const DAYTIME_THRESHOLD = 100;
+
+    const LOCATION_MAP = {
+        'north': { label: 'North', keywords: ['north', 'norte', 'field-north', 'node_01', 'node-01'] },
+        'south': { label: 'South', keywords: ['south', 'sur', 'field-south', 'node_02', 'node-02'] },
+        'east': { label: 'East', keywords: ['east', 'este', 'field-east', 'node_03', 'node-03'] },
+        'west': { label: 'West', keywords: ['west', 'oeste', 'field-west', 'node_04', 'node-04'] }
+    };
 
     const SUPABASE_CONFIG = {
         url: 'https://htziezxsevyxfauhqgnx.supabase.co',
@@ -886,9 +935,15 @@
     async function saveToSupabase(feedName, value) {
         if (!supabaseClient) return;
 
+        const location = extractLocation(feedName);
+        const locationLabel = location !== 'unknown' ? LOCATION_MAP[location].label : 'Unknown';
+        
+        // Save with location information embedded in the feed name for easier querying
+        const enrichedFeedName = `${feedName} [${locationLabel}]`;
+
         const { error } = await supabaseClient
             .from('sensor_logs')
-            .insert([{ feed_name: feedName, value: value }]);
+            .insert([{ feed_name: enrichedFeedName, value: value }]);
 
         if (error) {
             addLog(null, null, `[supabase] Insert failed: ${error.message}`);
@@ -1155,6 +1210,94 @@
         document.getElementById('livePill').style.display = rows.length > 0 ? 'flex' : 'none';
     }
 
+    function extractLocation(feedName) {
+        const feedLower = feedName.toLowerCase();
+        
+        // First try to extract from the [Location] format
+        const bracketMatch = feedName.match(/\[(.*?)\]/);
+        if (bracketMatch) {
+            const bracketed = bracketMatch[1].toLowerCase();
+            for (const [location, config] of Object.entries(LOCATION_MAP)) {
+                if (bracketed.includes(location)) {
+                    return location;
+                }
+            }
+        }
+        
+        // Fallback to keyword matching
+        for (const [location, config] of Object.entries(LOCATION_MAP)) {
+            for (const keyword of config.keywords) {
+                if (feedLower.includes(keyword)) {
+                    return location;
+                }
+            }
+        }
+        return 'unknown';
+    }
+
+    function getLocationColor(location) {
+        const colors = {
+            'north': '#c84a1a',
+            'south': '#0d6eaa',
+            'east': '#7b1fa2',
+            'west': '#b07a10',
+            'unknown': '#6a7a6a'
+        };
+        return colors[location] || colors['unknown'];
+    }
+
+    function extractSensorType(feedName) {
+        const feedLower = feedName.toLowerCase();
+        if (feedLower.includes('temperature')) return 'temperature';
+        if (feedLower.includes('humidity')) return 'humidity';
+        if (feedLower.includes('light')) return 'light';
+        if (feedLower.includes('led')) return 'led';
+        return 'unknown';
+    }
+
+    function formatValueWithLabel(value, feedName) {
+        const sensorType = extractSensorType(feedName);
+        const numValue = formatValue(value);
+        
+        const labels = {
+            'temperature': { icon: '🌡️', unit: '°C', label: 'Temperature' },
+            'humidity': { icon: '💧', unit: '%', label: 'Humidity' },
+            'light': { icon: '💡', unit: 'lux', label: 'Light Level' },
+            'led': { icon: '⚡', unit: '', label: 'LED Status' },
+            'unknown': { icon: '📊', unit: '', label: 'Value' }
+        };
+        
+        const config = labels[sensorType] || labels['unknown'];
+        const unitStr = config.unit ? ` ${config.unit}` : '';
+        
+        return `${config.icon} ${numValue}${unitStr}`;
+    }
+
+    function setLocationFilter(location, buttonElement) {
+        currentLocationFilter = location;
+        
+        // Update tab active states
+        document.querySelectorAll('.location-tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Activate clicked button
+        if (buttonElement) {
+            buttonElement.classList.add('active');
+        }
+        
+        // Update panel header
+        const panelHead = document.querySelector('.panel-head h3');
+        if (location === 'all') {
+            panelHead.textContent = 'Recent Database Rows — All Locations';
+        } else {
+            const locationLabel = LOCATION_MAP[location].label;
+            panelHead.textContent = `Recent Database Rows — ${locationLabel}`;
+        }
+        
+        renderTable();
+    }
+
     function formatValue(value) {
         if (value === null || value === undefined || value === '') return '—';
         const numericValue = Number(value);
@@ -1164,17 +1307,32 @@
 
     function renderTable() {
         const tbody = document.getElementById('sensorTableBody');
-        if (sensorLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📡</div><p>No sensor logs found</p><small>Insert a row into sensor_logs and refresh to verify the connection</small></div></td></tr>`;
+        
+        // Filter logs based on current location filter
+        let filteredLogs = sensorLogs;
+        if (currentLocationFilter !== 'all') {
+            filteredLogs = sensorLogs.filter(row => {
+                const location = extractLocation(row.feed_name || '');
+                return location === currentLocationFilter;
+            });
+        }
+
+        if (filteredLogs.length === 0) {
+            const locationLabel = currentLocationFilter === 'all' ? 'No sensor logs' : `No data from ${LOCATION_MAP[currentLocationFilter].label}`;
+            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📡</div><p>${locationLabel}</p><small>Insert a row into sensor_logs and refresh to verify the connection</small></div></td></tr>`;
             return;
         }
 
-        tbody.innerHTML = sensorLogs.map((row, i) => {
+        tbody.innerHTML = filteredLogs.map((row, i) => {
+            const location = extractLocation(row.feed_name || '');
+            const locationLabel = location !== 'unknown' ? LOCATION_MAP[location].label : 'Unknown';
+            const locationColor = getLocationColor(location);
+            const valueWithLabel = formatValueWithLabel(row.value, row.feed_name || '');
             return `
             <tr style="animation-delay:${i * 0.05}s">
                 <td><span class="sensor-id">${row.id}</span></td>
-                <td><span class="location-tag">${row.feed_name || '—'}</span></td>
-                <td><span class="temp-val">${formatValue(row.value)}</span></td>
+                <td><span class="location-tag" style="color: ${locationColor}">📍 ${locationLabel}</span></td>
+                <td><span class="temp-val">${valueWithLabel}</span></td>
                 <td><span class="ts-val">${formatTs(row.created_at)}</span></td>
             </tr>`;
         }).join('');

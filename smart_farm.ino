@@ -14,9 +14,13 @@
 
 //  -------------------------------
 // Node identity (unique per node)
+// IMPORTANT: Change these values for each Arduino node:
+// - SENSOR_ID: unique identifier (e.g., "NODE_01", "NODE_02", etc.)
+// - LOCATION_NAME: one of: "North", "South", "East", "West"
+// This ensures data from each location is properly separated in the UI
 // -------------------------------
 const char SENSOR_ID[] = "NODE_01";
-const char LOCATION_NAME[] = "North_Field";
+const char LOCATION_NAME[] = "North";
 
 // -------------------------------
 // WiFi / Server configuration
