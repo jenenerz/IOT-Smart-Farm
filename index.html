@@ -6,6 +6,7 @@
     <title>Smart Farm — Live Sensor Network</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --green-deep: #1a3a1a;
@@ -247,7 +248,7 @@
         .security-note p { font-size: 12px; color: var(--ink-mid); line-height: 1.5; margin: 0; }
 
         /* ── DASHBOARD ── */
-        .dashboard { display: none; }
+        .dashboard { display: block; }
         .dashboard.visible { display: block; }
 
         .topbar {
@@ -758,127 +759,54 @@
 </head>
 <body>
 
-<!-- CONNECTION MODAL -->
-<div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal">
-        <div class="modal-logo">
-            <div class="leaf">🌱</div>
-            <span>Smart Farm</span>
-        </div>
-        <h2>Connect to<br>Adafruit IO</h2>
-        <p>Two accounts required — each connects its own MQTT client to the broker.</p>
-
-        <div class="account-block">
-            <div class="account-label">
-                <span class="account-dot" style="background:#2d6a2d"></span>
-                Account 1 — North &amp; West fields
-            </div>
-            <div class="field-group">
-                <label>AIO Username</label>
-                <input type="text" id="aioUsername1" placeholder="north-west-account" autocomplete="off" autocapitalize="off" spellcheck="false">
-            </div>
-            <div class="field-group" style="margin-bottom:0">
-                <label>AIO Key</label>
-                <input type="password" id="aioKey1" placeholder="aio_xxxxxxxxxxxxxxxxxxxx">
-            </div>
-        </div>
-
-        <div class="account-block">
-            <div class="account-label">
-                <span class="account-dot" style="background:#3a7bd5"></span>
-                Account 2 — South &amp; East fields
-            </div>
-            <div class="field-group">
-                <label>AIO Username</label>
-                <input type="text" id="aioUsername2" placeholder="south-east-account" autocomplete="off" autocapitalize="off" spellcheck="false">
-            </div>
-            <div class="field-group" style="margin-bottom:0">
-                <label>AIO Key</label>
-                <input type="password" id="aioKey2" placeholder="aio_xxxxxxxxxxxxxxxxxxxx">
-                <div class="field-hint">Found in Adafruit IO → Account → My Key</div>
-            </div>
-        </div>
-
-        <button class="connect-btn" id="connectBtn" onclick="startConnect()">
-            <div class="spinner"></div>
-            <span class="btn-text">Connect both brokers</span>
-        </button>
-        <div class="modal-error" id="modalError"></div>
-
-        <div class="security-note">
-            <span class="icon">🔒</span>
-            <p>Credentials are used only in this browser session and are never stored or committed to source code.</p>
-        </div>
-    </div>
-</div>
-
 <!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
     <nav class="topbar">
         <div class="topbar-brand">
             <div class="leaf">🌱</div>
-            <span>Smart Farm Network</span>
+            <span>Smart Farm Database</span>
         </div>
         <div class="topbar-right">
-            <div class="mqtt-badge connecting" id="mqttBadge">
+            <div class="mqtt-badge connected" id="mqttBadge">
                 <span class="mqtt-dot"></span>
-                <span id="mqttBadgeText">Connecting…</span>
+                <span id="mqttBadgeText">Supabase ready</span>
             </div>
-            <button class="disconnect-btn" onclick="doDisconnect()">Disconnect</button>
+            <button class="disconnect-btn" onclick="loadSensorLogs(true)">Refresh</button>
         </div>
     </nav>
 
     <main class="main">
         <div class="page-heading">
-            <h2>Live Sensor Dashboard</h2>
-            <p>Subscribed as <span class="aio-user" id="aioUserDisplay">—</span> &nbsp;·&nbsp; MQTT over WebSocket &nbsp;·&nbsp; Adafruit IO broker</p>
+            <h2>Sensor Logs</h2>
+            <p>Loaded from <span class="aio-user" id="aioUserDisplay">sensor_logs</span> &nbsp;·&nbsp; Supabase browser client</p>
         </div>
 
         <div class="stats-grid">
             <div class="stat-tile green">
-                <div class="stat-label">Active Nodes</div>
+                <div class="stat-label">Recent Rows</div>
                 <div class="stat-number" id="activeNodes">0</div>
-                <div class="stat-sub">Transmitting now</div>
+                <div class="stat-sub">Newest records loaded</div>
             </div>
             <div class="stat-tile purple">
-                <div class="stat-label">Silent Nodes</div>
+                <div class="stat-label">Unique Feeds</div>
                 <div class="stat-number" id="silentNodes">0</div>
-                <div class="stat-sub">Nighttime / Low Light</div>
+                <div class="stat-sub">Distinct feed_name values</div>
             </div>
             <div class="stat-tile amber">
-                <div class="stat-label">Data Deluge Savings</div>
-                <div class="stat-number" id="delugeCount">0</div>
-                <div class="stat-sub">Transmissions skipped</div>
+                <div class="stat-label">Latest Value</div>
+                <div class="stat-number" id="delugeCount">—</div>
+                <div class="stat-sub" id="latestFeedLabel">Waiting for data</div>
             </div>
             <div class="stat-tile blue">
-                <div class="stat-label">Total Nodes</div>
-                <div class="stat-number" id="totalNodes">0</div>
-                <div class="stat-sub">Registered sensors</div>
-            </div>
-        </div>
-
-        <div class="actuator-bar">
-            <div class="actuator-chip" id="ledChip">
-                <span class="actuator-icon">💡</span>
-                <span>Red LED</span>
-                <span class="actuator-dot"></span>
-                <span class="actuator-state">OFF</span>
-            </div>
-            <div class="actuator-chip" id="piezoChip">
-                <span class="actuator-icon">🔔</span>
-                <span>Piezo Buzzer</span>
-                <span class="actuator-dot"></span>
-                <span class="actuator-state">OFF</span>
-            </div>
-            <div class="actuator-chip" id="dayNightChip">
-                <span class="actuator-icon">🌤</span>
-                <span id="dayNightLabel">Awaiting LDR…</span>
+                <div class="stat-label">Last Sync</div>
+                <div class="stat-number" id="totalNodes">—</div>
+                <div class="stat-sub">Last successful query</div>
             </div>
         </div>
 
         <div class="panel">
             <div class="panel-head">
-                <h3>Sensor Data</h3>
+                <h3>Recent Database Rows</h3>
                 <div class="live-pill" id="livePill" style="display:none">
                     <div class="live-dot"></div>
                     <span>Live</span>
@@ -887,22 +815,19 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Sensor ID</th>
-                        <th>Location</th>
-                        <th>Day / Night</th>
-                        <th>Temperature (°C)</th>
-                        <th>Humidity (%)</th>
-                        <th>Status</th>
-                        <th>Timestamp</th>
+                        <th>Record ID</th>
+                        <th>Feed Name</th>
+                        <th>Value</th>
+                        <th>Created At</th>
                     </tr>
                 </thead>
                 <tbody id="sensorTableBody">
                     <tr>
-                        <td colspan="7">
+                        <td colspan="4">
                             <div class="empty-state">
                                 <div class="empty-icon">📡</div>
-                                <p>Waiting for sensor data…</p>
-                                <small>Data will appear once your Arduino starts publishing</small>
+                                <p>Loading sensor logs…</p>
+                                <small>Supabase records will appear here after the first query</small>
                             </div>
                         </td>
                     </tr>
@@ -912,11 +837,11 @@
 
         <div class="mqtt-log">
             <div class="mqtt-log-head">
-                <span>// mqtt message log</span>
-                <button class="clear-log" onclick="clearLog()">clear</button>
+                <span>// supabase sync log</span>
+                <button class="clear-log" onclick="loadSensorLogs(true)">refresh</button>
             </div>
             <div class="mqtt-log-body" id="mqttLogBody">
-                <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-sys">Waiting for MQTT connection…</span></div>
+                <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-sys">Waiting for Supabase connection…</span></div>
             </div>
         </div>
     </main>
@@ -927,9 +852,92 @@
     let mqttClients = { acct1: null, acct2: null };
     let connectedCount = 0;
     let sensors = {};
+    let sensorLogs = [];
     let delugeCount = 0;
+    let supabaseClient = null;
     const ACTIVE_WINDOW_MS = 15000;
     const DAYTIME_THRESHOLD = 100;
+
+    const SUPABASE_CONFIG = {
+        url: 'https://htziezxsevyxfauhqgnx.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0emllenhzZXZ5eGZhdWhxZ254Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NjQ1MjYsImV4cCI6MjA5MzU0MDUyNn0.QLxRW4CVE8fpuk5FCLaxDnRrGF-K_zOf6FC4GmyJL3E'
+    };
+
+    function initSupabase() {
+        if (!window.supabase) {
+            setBadge('disconnected', 'Supabase SDK missing');
+            addLog(null, null, '[supabase] SDK unavailable');
+            return;
+        }
+
+        if (SUPABASE_CONFIG.url.includes('YOUR_PROJECT_REF') || SUPABASE_CONFIG.anonKey.includes('YOUR_SUPABASE_ANON_KEY')) {
+            setBadge('disconnected', 'Add Supabase config');
+            addLog(null, null, '[supabase] Add your project URL and anon key');
+            return;
+        }
+
+        supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        setBadge('connected', 'Supabase connected');
+        addLog(null, null, '[supabase] Client ready');
+        loadSensorLogs(false);
+        subscribeToSensorLogs();
+    }
+
+    async function saveToSupabase(feedName, value) {
+        if (!supabaseClient) return;
+
+        const { error } = await supabaseClient
+            .from('sensor_logs')
+            .insert([{ feed_name: feedName, value: value }]);
+
+        if (error) {
+            addLog(null, null, `[supabase] Insert failed: ${error.message}`);
+        }
+    }
+
+    async function loadSensorLogs(showLog) {
+        if (!supabaseClient) return;
+
+        const { data, error } = await supabaseClient
+            .from('sensor_logs')
+            .select('id, feed_name, value, created_at')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            setBadge('disconnected', 'Load failed');
+            addLog(null, null, `[supabase] Load failed: ${error.message}`);
+            return;
+        }
+
+        sensorLogs = data || [];
+        updateSummary(sensorLogs);
+        renderTable();
+
+        if (showLog) {
+            addLog(null, null, `[supabase] Loaded ${sensorLogs.length} rows from sensor_logs`);
+        }
+    }
+
+    function subscribeToSensorLogs() {
+        if (!supabaseClient) return;
+
+        supabaseClient
+            .channel('sensor_logs_realtime')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'sensor_logs' },
+                () => {
+                    loadSensorLogs(false);
+                    addLog(null, null, '[supabase] Realtime insert received over wss://:443');
+                }
+            )
+            .subscribe(status => {
+                if (status === 'SUBSCRIBED') {
+                    addLog(null, null, '[supabase] Realtime subscription active');
+                }
+            });
+    }
 
     // Node definitions: feed-prefix → { id, location, account }
     const NODE_MAP = {
@@ -1062,6 +1070,11 @@
 
         const node = NODE_MAP[matchedPrefix];
         const feedType = feedFull.slice(matchedPrefix.length + 1); // "temperature", "humidity", etc.
+        const numericValue = parseFloat(payload);
+
+        if (!Number.isNaN(numericValue)) {
+            saveToSupabase(feedFull, numericValue);
+        }
 
         if (feedType === 'led') {
             const isOn = payload.trim() === '1';
@@ -1071,11 +1084,11 @@
         }
 
         if (feedType === 'temperature') {
-            upsertSensor(node.id, node.location, 'temperature', parseFloat(payload));
+            upsertSensor(node.id, node.location, 'temperature', numericValue);
         } else if (feedType === 'humidity') {
-            upsertSensor(node.id, node.location, 'humidity', parseFloat(payload));
+            upsertSensor(node.id, node.location, 'humidity', numericValue);
         } else if (feedType === 'light') {
-            const ldr = parseFloat(payload);
+            const ldr = numericValue;
             const wasDay = sensors[node.id] ? sensors[node.id].is_day : true;
             const isDay  = ldr >= DAYTIME_THRESHOLD;
             if (wasDay && !isDay) delugeCount++;
@@ -1130,37 +1143,39 @@
     // Legacy compat
     function updateDayNightChip(isDay) { updateActuatorChips('_generic', isDay); }
 
+    function updateSummary(rows) {
+        const latestRow = rows[0] || null;
+        const uniqueFeeds = new Set(rows.map(row => row.feed_name).filter(Boolean)).size;
+
+        document.getElementById('activeNodes').textContent = rows.length;
+        document.getElementById('silentNodes').textContent = uniqueFeeds;
+        document.getElementById('delugeCount').textContent = latestRow ? formatValue(latestRow.value) : '—';
+        document.getElementById('latestFeedLabel').textContent = latestRow ? latestRow.feed_name : 'Waiting for data';
+        document.getElementById('totalNodes').textContent = latestRow ? formatTs(latestRow.created_at) : '—';
+        document.getElementById('livePill').style.display = rows.length > 0 ? 'flex' : 'none';
+    }
+
+    function formatValue(value) {
+        if (value === null || value === undefined || value === '') return '—';
+        const numericValue = Number(value);
+        if (Number.isNaN(numericValue)) return String(value);
+        return numericValue.toFixed(2);
+    }
+
     function renderTable() {
         const tbody = document.getElementById('sensorTableBody');
-        const entries = Object.values(sensors);
-        let active = 0, silent = 0;
-        entries.forEach(s => {
-            const age = Date.now() - new Date(s.timestamp).getTime();
-            if (age <= ACTIVE_WINDOW_MS) active++; else silent++;
-        });
-        document.getElementById('activeNodes').textContent  = active;
-        document.getElementById('silentNodes').textContent  = silent;
-        document.getElementById('delugeCount').textContent  = delugeCount;
-        document.getElementById('totalNodes').textContent   = entries.length;
-
-        if (entries.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📡</div><p>Waiting for sensor data…</p><small>Data will appear once your Arduinos start publishing</small></div></td></tr>`;
+        if (sensorLogs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📡</div><p>No sensor logs found</p><small>Insert a row into sensor_logs and refresh to verify the connection</small></div></td></tr>`;
             return;
         }
 
-        tbody.innerHTML = entries.map((s, i) => {
-            const age     = Date.now() - new Date(s.timestamp).getTime();
-            const isRecent = age <= ACTIVE_WINDOW_MS;
-            const isDay   = isRecent;
+        tbody.innerHTML = sensorLogs.map((row, i) => {
             return `
             <tr style="animation-delay:${i * 0.05}s">
-                <td><span class="sensor-id">${s.sensor_id}</span></td>
-                <td><span class="location-tag">${s.location_name}</span></td>
-                <td><span class="${isDay ? 'day-badge' : 'night-badge'}">${isDay ? '☀️ Day' : '🌙 Night'}</span></td>
-                <td><span class="temp-val">${s.temperature != null ? s.temperature.toFixed(1) + ' °C' : '—'}</span></td>
-                <td><span class="hum-val">${s.humidity != null ? s.humidity.toFixed(1) + ' %' : '—'}</span></td>
-                <td><span class="tx-badge ${isRecent ? 'transmitting' : 'silent'}"><span class="tx-dot"></span>${isRecent ? 'Transmitting' : 'Silent'}</span></td>
-                <td><span class="ts-val">${formatTs(s.timestamp)}</span></td>
+                <td><span class="sensor-id">${row.id}</span></td>
+                <td><span class="location-tag">${row.feed_name || '—'}</span></td>
+                <td><span class="temp-val">${formatValue(row.value)}</span></td>
+                <td><span class="ts-val">${formatTs(row.created_at)}</span></td>
             </tr>`;
         }).join('');
     }
@@ -1172,7 +1187,6 @@
         return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
     }
 
-    // ── MQTT log ──
     function addLog(topic, payload, sys) {
         const body = document.getElementById('mqttLogBody');
         const now  = new Date().toLocaleTimeString('en-PH', { hour12: false });
@@ -1214,11 +1228,7 @@
         hideModalError();
     }
 
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !document.getElementById('modalBackdrop').classList.contains('hidden')) startConnect();
-    });
-
-    setInterval(() => { if (Object.keys(sensors).length > 0) renderTable(); }, 5000);
+    initSupabase();
 </script>
 </body>
 </html>
