@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --green-deep: #1a3a1a;
@@ -788,6 +789,58 @@
         .log-topic { color: #a8d5a2; flex-shrink: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .log-payload { color: rgba(255,255,255,0.6); }
         .log-sys { color: rgba(255,255,255,0.3); font-style: italic; }
+
+        /* Analytics Charts */
+        .analytics-section {
+            margin-top: 32px;
+            animation: fadeUp 0.4s 0.4s ease both;
+        }
+
+        .analytics-heading {
+            font-family: var(--display);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 16px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 1000px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+
+        .chart-panel {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-family: var(--display);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ink-mid);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        canvas {
+            max-height: 300px;
+        }
     </style>
 </head>
 <body>
@@ -885,6 +938,36 @@
                 <div class="log-line"><span class="log-ts">--:--:--</span><span class="log-sys">Waiting for Supabase connection…</span></div>
             </div>
         </div>
+
+        <div class="analytics-section">
+            <div class="analytics-heading">📊 Analytics & Trends</div>
+            <div class="charts-grid">
+                <div class="chart-panel">
+                    <div class="chart-title">Temperature Trend</div>
+                    <div class="chart-container">
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-title">Humidity Trend</div>
+                    <div class="chart-container">
+                        <canvas id="humidityChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-title">Light Level Trend</div>
+                    <div class="chart-container">
+                        <canvas id="lightChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-title">Readings by Location</div>
+                    <div class="chart-container">
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 </div>
 
@@ -899,6 +982,12 @@
     let currentLocationFilter = 'all';
     const ACTIVE_WINDOW_MS = 15000;
     const DAYTIME_THRESHOLD = 100;
+
+    // Chart instances
+    let temperatureChart = null;
+    let humidityChart = null;
+    let lightChart = null;
+    let locationChart = null;
 
     const LOCATION_MAP = {
         'north': { label: 'North', keywords: ['north', 'norte', 'field-north', 'node_01', 'node-01'] },
@@ -968,6 +1057,7 @@
         sensorLogs = data || [];
         updateSummary(sensorLogs);
         renderTable();
+        updateCharts();
 
         if (showLog) {
             addLog(null, null, `[supabase] Loaded ${sensorLogs.length} rows from sensor_logs`);
@@ -1296,6 +1386,213 @@
         }
         
         renderTable();
+        updateCharts();
+    }
+
+    function updateCharts() {
+        updateTemperatureChart();
+        updateHumidityChart();
+        updateLightChart();
+        updateLocationChart();
+    }
+
+    function getFilteredSensorData() {
+        if (currentLocationFilter === 'all') {
+            return sensorLogs;
+        }
+        return sensorLogs.filter(row => {
+            const location = extractLocation(row.feed_name || '');
+            return location === currentLocationFilter;
+        });
+    }
+
+    function updateTemperatureChart() {
+        const filteredData = getFilteredSensorData();
+        const temperatureData = filteredData
+            .filter(row => extractSensorType(row.feed_name || '') === 'temperature')
+            .slice(-20)
+            .reverse();
+
+        const labels = temperatureData.map(row => {
+            const d = new Date(row.created_at);
+            return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
+        });
+
+        const data = temperatureData.map(row => parseFloat(row.value));
+
+        if (!temperatureChart) {
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            temperatureChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: data,
+                        borderColor: '#c84a1a',
+                        backgroundColor: 'rgba(200, 74, 26, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#c84a1a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, ticks: { color: '#6a7a6a' } },
+                        x: { ticks: { color: '#6a7a6a' } }
+                    }
+                }
+            });
+        } else {
+            temperatureChart.data.labels = labels;
+            temperatureChart.data.datasets[0].data = data;
+            temperatureChart.update();
+        }
+    }
+
+    function updateHumidityChart() {
+        const filteredData = getFilteredSensorData();
+        const humidityData = filteredData
+            .filter(row => extractSensorType(row.feed_name || '') === 'humidity')
+            .slice(-20)
+            .reverse();
+
+        const labels = humidityData.map(row => {
+            const d = new Date(row.created_at);
+            return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
+        });
+
+        const data = humidityData.map(row => parseFloat(row.value));
+
+        if (!humidityChart) {
+            const ctx = document.getElementById('humidityChart').getContext('2d');
+            humidityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Humidity (%)',
+                        data: data,
+                        borderColor: '#0d6eaa',
+                        backgroundColor: 'rgba(13, 110, 170, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0d6eaa'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { color: '#6a7a6a' } },
+                        x: { ticks: { color: '#6a7a6a' } }
+                    }
+                }
+            });
+        } else {
+            humidityChart.data.labels = labels;
+            humidityChart.data.datasets[0].data = data;
+            humidityChart.update();
+        }
+    }
+
+    function updateLightChart() {
+        const filteredData = getFilteredSensorData();
+        const lightData = filteredData
+            .filter(row => extractSensorType(row.feed_name || '') === 'light')
+            .slice(-20)
+            .reverse();
+
+        const labels = lightData.map(row => {
+            const d = new Date(row.created_at);
+            return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
+        });
+
+        const data = lightData.map(row => parseFloat(row.value));
+
+        if (!lightChart) {
+            const ctx = document.getElementById('lightChart').getContext('2d');
+            lightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Light Level (lux)',
+                        data: data,
+                        borderColor: '#e8a020',
+                        backgroundColor: 'rgba(232, 160, 32, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#e8a020'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#6a7a6a' } },
+                        x: { ticks: { color: '#6a7a6a' } }
+                    }
+                }
+            });
+        } else {
+            lightChart.data.labels = labels;
+            lightChart.data.datasets[0].data = data;
+            lightChart.update();
+        }
+    }
+
+    function updateLocationChart() {
+        const locationCounts = {
+            'north': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'north').length,
+            'south': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'south').length,
+            'east': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'east').length,
+            'west': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'west').length
+        };
+
+        const colors = ['#c84a1a', '#0d6eaa', '#7b1fa2', '#b07a10'];
+        const labels = ['North', 'South', 'East', 'West'];
+        const data = [locationCounts.north, locationCounts.south, locationCounts.east, locationCounts.west];
+
+        if (!locationChart) {
+            const ctx = document.getElementById('locationChart').getContext('2d');
+            locationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#6a7a6a', padding: 15 }
+                        }
+                    }
+                }
+            });
+        } else {
+            locationChart.data.datasets[0].data = data;
+            locationChart.update();
+        }
     }
 
     function formatValue(value) {
