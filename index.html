@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
     <style>
         :root {
             --green-deep: #1a3a1a;
@@ -40,217 +41,8 @@
             color: var(--ink);
         }
 
-        /* ── MODAL ── */
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background-image: url('images/smart-farm-bg.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            backdrop-filter: blur(6px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            padding: 20px;
-        }
-
-        .modal-backdrop.hidden { display: none; }
-
-        .modal {
-            background: var(--surface);
-            border-radius: 20px;
-            padding: 28px 32px;
-            width: 100%;
-            max-width: 560px;
-            border: 1px solid var(--border);
-            box-shadow: 0 32px 80px rgba(0,0,0,0.18);
-            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.88) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .account-block {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 10px;
-        }
-
-        .account-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--ink-mid);
-            margin-bottom: 10px;
-        }
-
-        .account-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .modal-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .account-fields {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .modal-logo .leaf {
-            width: 36px;
-            height: 36px;
-            background: var(--green-mid);
-            border-radius: 50% 50% 50% 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .modal-logo span {
-            font-family: var(--display);
-            font-weight: 700;
-            font-size: 18px;
-            color: var(--green-deep);
-        }
-
-        .modal h2 {
-            font-family: var(--display);
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 4px;
-            line-height: 1.2;
-        }
-
-        .modal p {
-            font-size: 13px;
-            color: var(--ink-light);
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        .field-group {
-            margin-bottom: 10px;
-        }
-
-        .field-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--ink-mid);
-            margin-bottom: 4px;
-        }
-
-        .field-group input {
-            width: 100%;
-            padding: 9px 11px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-family: var(--mono);
-            font-size: 13px;
-            color: var(--ink);
-            background: var(--bg);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .field-group input:focus {
-            border-color: var(--green-bright);
-            background: #fff;
-        }
-
-        .field-hint {
-            font-size: 11px;
-            color: var(--ink-light);
-            margin-top: 5px;
-        }
-
-        .connect-btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--green-mid);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-family: var(--display);
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .connect-btn:hover { background: var(--green-deep); }
-        .connect-btn:active { transform: scale(0.98); }
-
-        .connect-btn .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            display: none;
-        }
-
-        .connect-btn.loading .spinner { display: block; }
-        .connect-btn.loading .btn-text { display: none; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .modal-error {
-            font-size: 13px;
-            color: var(--red);
-            background: #fdf0f0;
-            border: 1px solid #f5c6c6;
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-top: 12px;
-            display: none;
-        }
-
-        .security-note {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin-top: 12px;
-            padding: 10px 12px;
-            background: var(--green-wash);
-            border-radius: 8px;
-            border: 1px solid #c5e0c2;
-        }
-
-        .security-note .icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
-        .security-note p { font-size: 12px; color: var(--ink-mid); line-height: 1.5; margin: 0; }
-
         /* ── DASHBOARD ── */
         .dashboard { display: block; }
-        .dashboard.visible { display: block; }
 
         .topbar {
             background: var(--green-deep);
@@ -307,35 +99,21 @@
             transition: all 0.3s;
         }
 
-        .mqtt-badge.connecting {
-            background: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.6);
-        }
-
-        .mqtt-badge.connected {
-            background: rgba(76, 175, 80, 0.2);
-            color: #a8d5a2;
-        }
-
-        .mqtt-badge.disconnected {
-            background: rgba(217, 79, 79, 0.2);
-            color: #f5a0a0;
-        }
+        .mqtt-badge.connecting { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+        .mqtt-badge.connected  { background: rgba(76,175,80,0.2);   color: #a8d5a2; }
+        .mqtt-badge.disconnected { background: rgba(217,79,79,0.2); color: #f5a0a0; }
 
         .mqtt-dot {
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             background: currentColor;
         }
 
-        .mqtt-badge.connected .mqtt-dot {
-            animation: pulse 2s infinite;
-        }
+        .mqtt-badge.connected .mqtt-dot { animation: pulse 2s infinite; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
+            50%       { opacity: 0.5; transform: scale(0.8); }
         }
 
         .disconnect-btn {
@@ -349,11 +127,7 @@
             font-family: var(--body);
             transition: all 0.2s;
         }
-
-        .disconnect-btn:hover {
-            background: rgba(255,255,255,0.14);
-            color: #fff;
-        }
+        .disconnect-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
 
         .main {
             padding: 32px;
@@ -361,491 +135,240 @@
             margin: 0 auto;
         }
 
-        .page-heading {
-            margin-bottom: 28px;
-        }
-
+        .page-heading { margin-bottom: 28px; }
         .page-heading h2 {
             font-family: var(--display);
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 4px;
+            font-size: 28px; font-weight: 700;
+            color: var(--ink); margin-bottom: 4px;
         }
-
-        .page-heading p {
-            font-size: 14px;
-            color: var(--ink-light);
-        }
-
+        .page-heading p { font-size: 14px; color: var(--ink-light); }
         .page-heading .aio-user {
-            font-family: var(--mono);
-            font-size: 12px;
-            color: var(--green-mid);
-            background: var(--green-wash);
-            padding: 2px 8px;
-            border-radius: 4px;
-            border: 1px solid #c5e0c2;
+            font-family: var(--mono); font-size: 12px;
+            color: var(--green-mid); background: var(--green-wash);
+            padding: 2px 8px; border-radius: 4px; border: 1px solid #c5e0c2;
         }
 
         /* Stats */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 28px;
+            gap: 16px; margin-bottom: 28px;
         }
 
-        @media (max-width: 900px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 500px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .main { padding: 20px 16px; }
-            .topbar { padding: 0 16px; }
-        }
+        @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } .main { padding: 20px 16px; } .topbar { padding: 0 16px; } }
 
         .stat-tile {
             background: var(--surface);
-            border-radius: 14px;
-            padding: 20px 22px;
+            border-radius: 14px; padding: 20px 22px;
             border: 1px solid var(--border);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
             animation: fadeUp 0.4s ease both;
         }
-
         .stat-tile::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
+            content: ''; position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
             border-radius: 14px 14px 0 0;
         }
-
-        .stat-tile.green::before { background: var(--green-bright); }
+        .stat-tile.green::before  { background: var(--green-bright); }
         .stat-tile.purple::before { background: #9c6ade; }
-        .stat-tile.amber::before { background: var(--amber); }
-        .stat-tile.blue::before { background: var(--blue); }
+        .stat-tile.amber::before  { background: var(--amber); }
+        .stat-tile.blue::before   { background: var(--blue); }
 
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .stat-tile:nth-child(1) { animation-delay: 0.05s; }
-        .stat-tile:nth-child(2) { animation-delay: 0.1s; }
-        .stat-tile:nth-child(3) { animation-delay: 0.15s; }
-        .stat-tile:nth-child(4) { animation-delay: 0.2s; }
+        .stat-tile:nth-child(1) { animation-delay:.05s; }
+        .stat-tile:nth-child(2) { animation-delay:.10s; }
+        .stat-tile:nth-child(3) { animation-delay:.15s; }
+        .stat-tile:nth-child(4) { animation-delay:.20s; }
 
         .stat-label {
-            font-size: 11px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: var(--ink-light);
-            margin-bottom: 10px;
+            font-size: 11px; font-weight: 500;
+            text-transform: uppercase; letter-spacing: 0.07em;
+            color: var(--ink-light); margin-bottom: 10px;
         }
-
         .stat-number {
-            font-family: var(--display);
-            font-size: 40px;
-            font-weight: 800;
-            line-height: 1;
-            margin-bottom: 6px;
+            font-family: var(--display); font-size: 40px;
+            font-weight: 800; line-height: 1; margin-bottom: 6px;
         }
-
-        .stat-tile.green .stat-number { color: var(--green-mid); }
+        .stat-tile.green .stat-number  { color: var(--green-mid); }
         .stat-tile.purple .stat-number { color: #7b4fbf; }
-        .stat-tile.amber .stat-number { color: #b07a10; }
-        .stat-tile.blue .stat-number { color: var(--blue); }
+        .stat-tile.amber .stat-number  { color: #b07a10; }
+        .stat-tile.blue .stat-number   { color: var(--blue); }
+        .stat-sub { font-size: 12px; color: var(--ink-light); }
 
-        .stat-sub {
-            font-size: 12px;
-            color: var(--ink-light);
-        }
-
-        /* Actuator status */
-        .actuator-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-        }
-
-        .actuator-chip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        /* Location Tabs */
+        .location-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .location-tab {
             padding: 10px 16px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--ink-mid);
-            transition: all 0.3s;
+            background: var(--surface); border: 1.5px solid var(--border);
+            border-radius: 10px; font-size: 14px; font-weight: 500;
+            color: var(--ink-mid); cursor: pointer; transition: all 0.3s;
+            font-family: var(--body);
         }
-
-        .actuator-chip.active {
-            background: #fff8e6;
-            border-color: #f0d080;
-            color: #8a5c00;
-        }
-
-        .actuator-icon {
-            font-size: 16px;
-        }
-
-        .actuator-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--border);
-            transition: background 0.3s;
-        }
-
-        .actuator-chip.active .actuator-dot {
-            background: var(--amber);
-            animation: pulse 1.5s infinite;
+        .location-tab:hover { border-color: var(--green-mid); color: var(--green-mid); }
+        .location-tab.active {
+            background: var(--green-bright); border-color: var(--green-bright);
+            color: white; box-shadow: 0 4px 12px rgba(76,175,80,0.3);
         }
 
         /* Table panel */
         .panel {
-            background: var(--surface);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            overflow: hidden;
+            background: var(--surface); border-radius: 16px;
+            border: 1px solid var(--border); overflow: hidden;
             animation: fadeUp 0.4s 0.25s ease both;
         }
-
         .panel-head {
-            padding: 18px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 18px 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
             background: var(--green-wash);
         }
+        .panel-head h3 { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--green-deep); }
+        .live-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green-mid); font-weight: 500; }
+        .live-dot { width: 7px; height: 7px; background: var(--green-bright); border-radius: 50%; animation: pulse 1.5s infinite; }
 
-        .panel-head h3 {
-            font-family: var(--display);
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--green-deep);
-        }
-
-        .live-pill {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            color: var(--green-mid);
-            font-weight: 500;
-        }
-
-        .live-dot {
-            width: 7px;
-            height: 7px;
-            background: var(--green-bright);
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
+        .data-table { width: 100%; border-collapse: collapse; }
         .data-table thead th {
-            padding: 11px 20px;
-            text-align: left;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: var(--ink-light);
-            border-bottom: 1px solid var(--border);
-            background: var(--green-wash);
-            white-space: nowrap;
+            padding: 11px 20px; text-align: left; font-size: 11px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;
+            color: var(--ink-light); border-bottom: 1px solid var(--border);
+            background: var(--green-wash); white-space: nowrap;
         }
-
-        .data-table tbody td {
-            padding: 14px 20px;
-            font-size: 14px;
-            border-bottom: 1px solid #eef4ea;
-            vertical-align: middle;
-        }
-
+        .data-table tbody td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid #eef4ea; vertical-align: middle; }
         .data-table tbody tr:last-child td { border-bottom: none; }
-
-        .data-table tbody tr {
-            transition: background 0.15s;
-            animation: rowIn 0.3s ease both;
-        }
-
-        @keyframes rowIn {
-            from { opacity: 0; transform: translateX(-6px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
+        .data-table tbody tr { transition: background 0.15s; animation: rowIn 0.3s ease both; }
+        @keyframes rowIn { from { opacity:0; transform:translateX(-6px); } to { opacity:1; transform:translateX(0); } }
         .data-table tbody tr:hover { background: #f5fbf2; }
 
         .sensor-id {
-            font-family: var(--mono);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--green-mid);
-            background: var(--green-wash);
-            padding: 3px 8px;
-            border-radius: 5px;
-            border: 1px solid #c5e0c2;
+            font-family: var(--mono); font-size: 13px; font-weight: 500;
+            color: var(--green-mid); background: var(--green-wash);
+            padding: 3px 8px; border-radius: 5px; border: 1px solid #c5e0c2;
         }
-
-        .location-tag {
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .day-badge, .night-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .day-badge {
-            background: #fff8e1;
-            color: #e65100;
-            border: 1px solid #ffe0a0;
-        }
-
-        .night-badge {
-            background: #e8eaf6;
-            color: #3949ab;
-            border: 1px solid #c5c9e8;
-        }
-
-        .tx-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .tx-badge.transmitting {
-            background: var(--green-wash);
-            color: var(--green-mid);
-            border: 1px solid #c5e0c2;
-        }
-
-        .tx-badge.silent {
-            background: #f3e5f5;
-            color: #7b1fa2;
-            border: 1px solid #ddb8f0;
-        }
-
-        .tx-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .tx-badge.transmitting .tx-dot {
-            animation: pulse 1.2s infinite;
-        }
-
+        .location-tag { font-weight: 500; font-size: 14px; }
         .temp-val { color: #c84a1a; font-weight: 500; font-family: var(--mono); font-size: 14px; }
-        .hum-val  { color: #0d6eaa; font-weight: 500; font-family: var(--mono); font-size: 14px; }
         .ts-val   { color: var(--ink-light); font-size: 12px; font-family: var(--mono); }
 
-        .empty-state {
-            padding: 64px 20px;
-            text-align: center;
+        /* Anomaly badge */
+        .anomaly-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 12px; font-size: 11px;
+            font-weight: 600; margin-left: 6px;
+            background: #fff0f0; color: #c84a1a; border: 1px solid #f5c6c6;
+            animation: anomalyPulse 2s infinite;
+        }
+        @keyframes anomalyPulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(200,74,26,0.3); }
+            50%      { box-shadow: 0 0 0 4px rgba(200,74,26,0); }
         }
 
-        .empty-icon {
-            font-size: 44px;
-            opacity: 0.35;
-            margin-bottom: 16px;
-        }
-
-        .empty-state p {
-            font-family: var(--display);
-            font-size: 17px;
-            font-weight: 600;
-            color: var(--ink-mid);
-            margin-bottom: 6px;
-        }
-
-        .empty-state small {
-            font-size: 13px;
-            color: var(--ink-light);
-        }
-
-        /* Location Tabs */
-        .location-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .location-tab {
-            padding: 10px 16px;
-            background: var(--surface);
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--ink-mid);
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: var(--body);
-        }
-
-        .location-tab:hover {
-            border-color: var(--green-mid);
-            color: var(--green-mid);
-        }
-
-        .location-tab.active {
-            background: var(--green-bright);
-            border-color: var(--green-bright);
-            color: white;
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-        }
+        .empty-state { padding: 64px 20px; text-align: center; }
+        .empty-icon  { font-size: 44px; opacity: 0.35; margin-bottom: 16px; }
+        .empty-state p     { font-family: var(--display); font-size: 17px; font-weight: 600; color: var(--ink-mid); margin-bottom: 6px; }
+        .empty-state small { font-size: 13px; color: var(--ink-light); }
 
         /* MQTT log */
-        .mqtt-log {
-            margin-top: 20px;
-            background: var(--green-deep);
-            border-radius: 12px;
-            overflow: hidden;
-            animation: fadeUp 0.4s 0.35s ease both;
-        }
-
-        .mqtt-log-head {
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .mqtt-log-head span {
-            font-family: var(--mono);
-            font-size: 12px;
-            color: var(--green-pale);
-            font-weight: 500;
-        }
-
-        .clear-log {
-            background: none;
-            border: 1px solid rgba(255,255,255,0.15);
-            color: rgba(255,255,255,0.4);
-            font-size: 11px;
-            padding: 3px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: var(--mono);
-            transition: all 0.2s;
-        }
-
+        .mqtt-log { margin-top: 20px; background: var(--green-deep); border-radius: 12px; overflow: hidden; animation: fadeUp 0.4s 0.35s ease both; }
+        .mqtt-log-head { padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .mqtt-log-head span { font-family: var(--mono); font-size: 12px; color: var(--green-pale); font-weight: 500; }
+        .clear-log { background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.4); font-size: 11px; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-family: var(--mono); transition: all 0.2s; }
         .clear-log:hover { color: rgba(255,255,255,0.7); }
-
-        .mqtt-log-body {
-            padding: 12px 18px;
-            min-height: 80px;
-            max-height: 160px;
-            overflow-y: auto;
-            font-family: var(--mono);
-            font-size: 12px;
-        }
-
-        .log-line {
-            display: flex;
-            gap: 12px;
-            padding: 3px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-            animation: logIn 0.2s ease;
-        }
-
-        @keyframes logIn {
-            from { opacity: 0; transform: translateY(-3px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        .mqtt-log-body { padding: 12px 18px; min-height: 80px; max-height: 160px; overflow-y: auto; font-family: var(--mono); font-size: 12px; }
+        .log-line { display: flex; gap: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.04); animation: logIn 0.2s ease; }
+        @keyframes logIn { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
         .log-line:last-child { border-bottom: none; }
-        .log-ts { color: rgba(255,255,255,0.25); flex-shrink: 0; }
-        .log-topic { color: #a8d5a2; flex-shrink: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .log-ts      { color: rgba(255,255,255,0.25); flex-shrink: 0; }
+        .log-topic   { color: #a8d5a2; flex-shrink: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .log-payload { color: rgba(255,255,255,0.6); }
-        .log-sys { color: rgba(255,255,255,0.3); font-style: italic; }
+        .log-sys     { color: rgba(255,255,255,0.3); font-style: italic; }
 
-        /* Analytics Charts */
-        .analytics-section {
-            margin-top: 32px;
-            animation: fadeUp 0.4s 0.4s ease both;
+        /* ── ANALYTICS ── */
+        .analytics-section { margin-top: 32px; animation: fadeUp 0.4s 0.4s ease both; }
+        .analytics-heading { font-family: var(--display); font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 16px; }
+
+        /* Alert banner */
+        .alert-banner {
+            display: none;
+            background: #fff8e1; border: 1px solid #ffe082;
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+            animation: fadeUp 0.3s ease both;
+        }
+        .alert-banner.visible { display: block; }
+        .alert-banner.critical { background: #fff0f0; border-color: #f5c6c6; }
+        .alert-items { display: flex; flex-direction: column; gap: 6px; }
+        .alert-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--ink); line-height: 1.5; }
+        .alert-item .alert-icon { flex-shrink: 0; font-size: 15px; }
+
+        /* Insight + forecast row */
+        .insights-grid {
+            display: grid; grid-template-columns: 1.15fr 0.85fr;
+            gap: 20px; margin-bottom: 20px;
+        }
+        @media (max-width: 1000px) { .insights-grid { grid-template-columns: 1fr; } }
+
+        .insight-panel, .forecast-panel {
+            background: var(--surface); border-radius: 16px;
+            border: 1px solid var(--border); padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        .analytics-heading {
-            font-family: var(--display);
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 16px;
+        .insight-copy { font-size: 15px; line-height: 1.65; color: var(--ink); margin-bottom: 14px; }
+        .insight-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+        .insight-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border-radius: 999px;
+            background: var(--bg); border: 1px solid var(--border);
+            font-size: 12px; color: var(--ink-mid);
         }
+        .insight-chip.warn  { background: #fff8e1; border-color: #ffe082; color: #7a5800; }
+        .insight-chip.alert { background: #fff0f0; border-color: #f5c6c6; color: #c84a1a; }
+        .insight-chip.good  { background: var(--green-wash); border-color: #c5e0c2; color: var(--green-mid); }
 
+        /* Forecast grid */
+        .forecast-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+        @media (max-width: 700px) { .forecast-grid { grid-template-columns: 1fr; } }
+
+        .forecast-item {
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px;
+        }
+        .forecast-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-mid); }
+        .forecast-value { display: block; font-family: var(--display); font-size: 24px; font-weight: 700; color: var(--ink); margin: 6px 0 2px; }
+        .forecast-range { display: block; font-family: var(--mono); font-size: 11px; color: var(--ink-light); margin-bottom: 4px; }
+        .forecast-steps { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+        .forecast-step {
+            font-family: var(--mono); font-size: 11px;
+            padding: 2px 7px; border-radius: 4px;
+            background: var(--surface); border: 1px solid var(--border); color: var(--ink-mid);
+        }
+        .forecast-note { font-size: 11px; line-height: 1.45; color: var(--ink-light); }
+
+        /* Charts */
         .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(2,1fr);
+            gap: 20px; margin-bottom: 20px;
         }
-
-        @media (max-width: 1000px) {
-            .charts-grid { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 1000px) { .charts-grid { grid-template-columns: 1fr; } }
 
         .chart-panel {
-            background: var(--surface);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            background: var(--surface); border-radius: 16px;
+            border: 1px solid var(--border); padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-
         .chart-title {
-            font-family: var(--display);
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--ink-mid);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            font-family: var(--display); font-size: 14px; font-weight: 600;
+            color: var(--ink-mid); margin-bottom: 12px;
+            text-transform: uppercase; letter-spacing: 0.05em;
         }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-        }
-
-        canvas {
-            max-height: 300px;
-        }
+        .chart-container { position: relative; height: 300px; }
+        canvas { max-height: 300px; }
     </style>
 </head>
 <body>
 
-<!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
     <nav class="topbar">
         <div class="topbar-brand">
@@ -891,16 +414,16 @@
         </div>
 
         <div class="location-tabs">
-            <button class="location-tab active" data-location="all" onclick="setLocationFilter('all', this)">📊 All Locations</button>
-            <button class="location-tab" data-location="north" onclick="setLocationFilter('north', this)">🧭 North</button>
-            <button class="location-tab" data-location="south" onclick="setLocationFilter('south', this)">🧭 South</button>
-            <button class="location-tab" data-location="east" onclick="setLocationFilter('east', this)">🧭 East</button>
-            <button class="location-tab" data-location="west" onclick="setLocationFilter('west', this)">🧭 West</button>
+            <button class="location-tab active" data-location="all"   onclick="setLocationFilter('all',this)">📊 All Locations</button>
+            <button class="location-tab" data-location="north" onclick="setLocationFilter('north',this)">🧭 North</button>
+            <button class="location-tab" data-location="south" onclick="setLocationFilter('south',this)">🧭 South</button>
+            <button class="location-tab" data-location="east"  onclick="setLocationFilter('east',this)">🧭 East</button>
+            <button class="location-tab" data-location="west"  onclick="setLocationFilter('west',this)">🧭 West</button>
         </div>
 
         <div class="panel">
             <div class="panel-head">
-                <h3>Recent Database Rows — All Locations</h3>
+                <h3 id="panelTitle">Recent Database Rows — All Locations</h3>
                 <div class="live-pill" id="livePill" style="display:none">
                     <div class="live-dot"></div>
                     <span>Live</span>
@@ -916,15 +439,7 @@
                     </tr>
                 </thead>
                 <tbody id="sensorTableBody">
-                    <tr>
-                        <td colspan="4">
-                            <div class="empty-state">
-                                <div class="empty-icon">📡</div>
-                                <p>Loading sensor logs…</p>
-                                <small>Supabase records will appear here after the first query</small>
-                            </div>
-                        </td>
-                    </tr>
+                    <tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📡</div><p>Loading sensor logs…</p><small>Supabase records will appear here after the first query</small></div></td></tr>
                 </tbody>
             </table>
         </div>
@@ -939,32 +454,67 @@
             </div>
         </div>
 
+        <!-- ── ANALYTICS ── -->
         <div class="analytics-section">
             <div class="analytics-heading">📊 Analytics & Trends</div>
+
+            <!-- Cross-signal alert banner -->
+            <div class="alert-banner" id="alertBanner">
+                <div class="alert-items" id="alertItems"></div>
+            </div>
+
+            <div class="insights-grid">
+                <div class="insight-panel">
+                    <div class="chart-title">Operational Insight</div>
+                    <div class="insight-copy" id="insightSummary">Load sensor logs to generate a trend insight.</div>
+                    <div class="insight-meta" id="insightMeta">
+                        <span class="insight-chip">Forecast refreshes with the latest filter</span>
+                    </div>
+                </div>
+                <div class="forecast-panel">
+                    <div class="chart-title">Next-Reading Forecast <span style="font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-light)">(EMA smoothed · ±σ range)</span></div>
+                    <div class="forecast-grid">
+                        <div class="forecast-item">
+                            <span class="forecast-label">Temperature</span>
+                            <span class="forecast-value" id="forecastTemperature">—</span>
+                            <span class="forecast-range"  id="forecastTemperatureRange"></span>
+                            <div class="forecast-steps"   id="forecastTemperatureSteps"></div>
+                            <div class="forecast-note"    id="forecastTemperatureNote">Awaiting enough samples.</div>
+                        </div>
+                        <div class="forecast-item">
+                            <span class="forecast-label">Humidity</span>
+                            <span class="forecast-value" id="forecastHumidity">—</span>
+                            <span class="forecast-range"  id="forecastHumidityRange"></span>
+                            <div class="forecast-steps"   id="forecastHumiditySteps"></div>
+                            <div class="forecast-note"    id="forecastHumidityNote">Awaiting enough samples.</div>
+                        </div>
+                        <div class="forecast-item">
+                            <span class="forecast-label">Light</span>
+                            <span class="forecast-value" id="forecastLight">—</span>
+                            <span class="forecast-range"  id="forecastLightRange"></span>
+                            <div class="forecast-steps"   id="forecastLightSteps"></div>
+                            <div class="forecast-note"    id="forecastLightNote">Awaiting enough samples.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="charts-grid">
                 <div class="chart-panel">
                     <div class="chart-title">Temperature Trend</div>
-                    <div class="chart-container">
-                        <canvas id="temperatureChart"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="temperatureChart"></canvas></div>
                 </div>
                 <div class="chart-panel">
                     <div class="chart-title">Humidity Trend</div>
-                    <div class="chart-container">
-                        <canvas id="humidityChart"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="humidityChart"></canvas></div>
                 </div>
                 <div class="chart-panel">
                     <div class="chart-title">Light Level Trend</div>
-                    <div class="chart-container">
-                        <canvas id="lightChart"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="lightChart"></canvas></div>
                 </div>
                 <div class="chart-panel">
                     <div class="chart-title">Readings by Location</div>
-                    <div class="chart-container">
-                        <canvas id="locationChart"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="locationChart"></canvas></div>
                 </div>
             </div>
         </div>
@@ -972,718 +522,634 @@
 </div>
 
 <script>
-    // ── State ──
-    let mqttClients = { acct1: null, acct2: null };
-    let connectedCount = 0;
-    let sensors = {};
-    let sensorLogs = [];
-    let delugeCount = 0;
-    let supabaseClient = null;
-    let currentLocationFilter = 'all';
-    const ACTIVE_WINDOW_MS = 15000;
-    const DAYTIME_THRESHOLD = 100;
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+const SUPABASE_CONFIG = {
+    url:     'https://htziezxsevyxfauhqgnx.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0emllenhzZXZ5eGZhdWhxZ254Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NjQ1MjYsImV4cCI6MjA5MzU0MDUyNn0.QLxRW4CVE8fpuk5FCLaxDnRrGF-K_zOf6FC4GmyJL3E'
+};
 
-    // Chart instances
-    let temperatureChart = null;
-    let humidityChart = null;
-    let lightChart = null;
-    let locationChart = null;
+const DAYTIME_THRESHOLD = 100;
 
-    const LOCATION_MAP = {
-        'north': { label: 'North', keywords: ['north', 'norte', 'field-north', 'node_01', 'node-01'] },
-        'south': { label: 'South', keywords: ['south', 'sur', 'field-south', 'node_02', 'node-02'] },
-        'east': { label: 'East', keywords: ['east', 'este', 'field-east', 'node_03', 'node-03'] },
-        'west': { label: 'West', keywords: ['west', 'oeste', 'field-west', 'node_04', 'node-04'] }
+// Ideal ranges for reference bands on charts
+const IDEAL_RANGES = {
+    temperature: { min: 20, max: 30,  label: 'Ideal 20–30°C' },
+    humidity:    { min: 60, max: 80,  label: 'Ideal 60–80%' },
+    light:       { min: 100, max: 800, label: 'Active window' }
+};
+
+// Anomaly detection: flag if > N standard deviations from rolling mean
+const ANOMALY_SIGMA = 2;
+
+const LOCATION_MAP = {
+    north: { label: 'North', keywords: ['north','norte','field-north','node_01','node-01'] },
+    south: { label: 'South', keywords: ['south','sur','field-south','node_02','node-02'] },
+    east:  { label: 'East',  keywords: ['east','este','field-east','node_03','node-03'] },
+    west:  { label: 'West',  keywords: ['west','oeste','field-west','node_04','node-04'] }
+};
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let supabaseClient     = null;
+let sensorLogs         = [];
+let currentLocationFilter = 'all';
+let temperatureChart   = null;
+let humidityChart      = null;
+let lightChart         = null;
+let locationChart      = null;
+
+// ══════════════════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════════════════
+function initSupabase() {
+    if (!window.supabase) { setBadge('disconnected','Supabase SDK missing'); return; }
+    supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+    setBadge('connected','Supabase connected');
+    addLog(null,null,'[supabase] Client ready');
+    loadSensorLogs(false);
+    subscribeToSensorLogs();
+}
+
+async function loadSensorLogs(showLog) {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient
+        .from('sensor_logs')
+        .select('id,feed_name,value,created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+    if (error) { setBadge('disconnected','Load failed'); addLog(null,null,`[supabase] Load failed: ${error.message}`); return; }
+
+    sensorLogs = data || [];
+    updateSummary(sensorLogs);
+    renderTable();
+    updateCharts();
+    updateInsights();
+
+    if (showLog) addLog(null,null,`[supabase] Loaded ${sensorLogs.length} rows from sensor_logs`);
+}
+
+function subscribeToSensorLogs() {
+    if (!supabaseClient) return;
+    supabaseClient.channel('sensor_logs_realtime')
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'sensor_logs' }, () => {
+            loadSensorLogs(false);
+            addLog(null,null,'[supabase] Realtime insert received');
+        })
+        .subscribe(status => {
+            if (status === 'SUBSCRIBED') addLog(null,null,'[supabase] Realtime subscription active');
+        });
+}
+
+// ══════════════════════════════════════════════════════
+// HELPERS — location / sensor type
+// ══════════════════════════════════════════════════════
+function extractLocation(feedName) {
+    const fl = feedName.toLowerCase();
+    const bm = feedName.match(/\[(.*?)\]/);
+    if (bm) {
+        const b = bm[1].toLowerCase();
+        for (const [loc] of Object.entries(LOCATION_MAP)) if (b.includes(loc)) return loc;
+    }
+    for (const [loc, cfg] of Object.entries(LOCATION_MAP))
+        for (const kw of cfg.keywords) if (fl.includes(kw)) return loc;
+    return 'unknown';
+}
+
+function getLocationColor(loc) {
+    return { north:'#c84a1a', south:'#0d6eaa', east:'#7b1fa2', west:'#b07a10', unknown:'#6a7a6a' }[loc] || '#6a7a6a';
+}
+
+function extractSensorType(feedName) {
+    const fl = feedName.toLowerCase();
+    if (fl.includes('temperature')) return 'temperature';
+    if (fl.includes('humidity'))    return 'humidity';
+    if (fl.includes('light'))       return 'light';
+    if (fl.includes('led'))         return 'led';
+    return 'unknown';
+}
+
+function formatValue(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    const n = Number(v);
+    return isNaN(n) ? String(v) : n.toFixed(2);
+}
+
+function formatValueWithLabel(value, feedName) {
+    const type = extractSensorType(feedName);
+    const numV = formatValue(value);
+    const map  = {
+        temperature: { icon:'🌡️', unit:'°C' },
+        humidity:    { icon:'💧', unit:'%' },
+        light:       { icon:'💡', unit:'lux' },
+        led:         { icon:'⚡', unit:'' },
+        unknown:     { icon:'📊', unit:'' }
     };
+    const cfg = map[type] || map.unknown;
+    return `${cfg.icon} ${numV}${cfg.unit ? ' '+cfg.unit : ''}`;
+}
 
-    const SUPABASE_CONFIG = {
-        url: 'https://htziezxsevyxfauhqgnx.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0emllenhzZXZ5eGZhdWhxZ254Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5NjQ1MjYsImV4cCI6MjA5MzU0MDUyNn0.QLxRW4CVE8fpuk5FCLaxDnRrGF-K_zOf6FC4GmyJL3E'
+function formatTs(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d)) return ts;
+    return d.toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+}
+
+// ══════════════════════════════════════════════════════
+// EMA + STATISTICS UTILITIES
+// ══════════════════════════════════════════════════════
+
+/**
+ * Exponential Moving Average smoothing.
+ * alpha: smoothing factor 0 < α ≤ 1. Higher = more weight on recent values.
+ */
+function ema(values, alpha = 0.3) {
+    if (!values.length) return [];
+    const result = [values[0]];
+    for (let i = 1; i < values.length; i++) {
+        result.push(alpha * values[i] + (1 - alpha) * result[i - 1]);
+    }
+    return result;
+}
+
+/** Standard deviation of an array */
+function stdDev(values) {
+    if (values.length < 2) return 0;
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+    return Math.sqrt(variance);
+}
+
+/** Rolling mean of last N values */
+function rollingMean(values, n = 10) {
+    const window = values.slice(-n);
+    return window.reduce((a, b) => a + b, 0) / (window.length || 1);
+}
+
+/**
+ * Build a 3-step EMA forecast with confidence interval.
+ * Returns: { steps: [v1,v2,v3], sigma, low, high, trend, note }
+ */
+function buildEMAForecast(rawValues) {
+    if (!rawValues.length) return null;
+
+    const smoothed = ema(rawValues, 0.3);
+    const sigma    = stdDev(rawValues);
+
+    if (smoothed.length === 1) {
+        const v = smoothed[0];
+        return { steps: [v, v, v], sigma, low: v - sigma, high: v + sigma,
+                 trend: 'steady', note: 'Only one sample — forecast is flat.' };
+    }
+
+    // Compute EMA-level delta (trend of smoothed series)
+    const deltas = [];
+    for (let i = 1; i < smoothed.length; i++) deltas.push(smoothed[i] - smoothed[i-1]);
+    const avgDelta = ema(deltas, 0.4).slice(-1)[0] || 0; // EMA of deltas
+
+    // Project 3 steps
+    let last = smoothed[smoothed.length - 1];
+    const steps = [];
+    for (let i = 0; i < 3; i++) { last += avgDelta; steps.push(last); }
+
+    const trend = avgDelta > 0.15 ? 'rising' : avgDelta < -0.15 ? 'falling' : 'steady';
+    const confidence = sigma.toFixed(2);
+    const note = `EMA trend is ${trend} (Δ${avgDelta > 0 ? '+' : ''}${avgDelta.toFixed(2)}/step). σ = ${confidence}`;
+
+    return {
+        steps,
+        sigma,
+        low:  steps[0] - sigma,
+        high: steps[0] + sigma,
+        trend,
+        avgDelta,
+        note
     };
+}
 
-    function initSupabase() {
-        if (!window.supabase) {
-            setBadge('disconnected', 'Supabase SDK missing');
-            addLog(null, null, '[supabase] SDK unavailable');
-            return;
-        }
+/**
+ * Anomaly detection: returns true if value is > ANOMALY_SIGMA σ
+ * from the rolling mean of recent samples.
+ */
+function isAnomaly(value, samples) {
+    if (samples.length < 5) return false;
+    const vals    = samples.map(s => s.value);
+    const mean    = rollingMean(vals, 10);
+    const sigma   = stdDev(vals.slice(-10));
+    return Math.abs(value - mean) > ANOMALY_SIGMA * sigma;
+}
 
-        if (SUPABASE_CONFIG.url.includes('YOUR_PROJECT_REF') || SUPABASE_CONFIG.anonKey.includes('YOUR_SUPABASE_ANON_KEY')) {
-            setBadge('disconnected', 'Add Supabase config');
-            addLog(null, null, '[supabase] Add your project URL and anon key');
-            return;
-        }
+// ══════════════════════════════════════════════════════
+// DATA ACCESS
+// ══════════════════════════════════════════════════════
+function getFilteredSensorData() {
+    if (currentLocationFilter === 'all') return sensorLogs;
+    return sensorLogs.filter(row => extractLocation(row.feed_name || '') === currentLocationFilter);
+}
 
-        supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-        setBadge('connected', 'Supabase connected');
-        addLog(null, null, '[supabase] Client ready');
-        loadSensorLogs(false);
-        subscribeToSensorLogs();
-    }
+function getTrendSamples(sensorType) {
+    return getFilteredSensorData()
+        .filter(row => extractSensorType(row.feed_name || '') === sensorType)
+        .map(row => ({ value: parseFloat(row.value), created_at: row.created_at }))
+        .filter(s  => !isNaN(s.value));
+}
 
-    async function saveToSupabase(feedName, value) {
-        if (!supabaseClient) return;
+// ══════════════════════════════════════════════════════
+// CROSS-SIGNAL ALERTS
+// ══════════════════════════════════════════════════════
+function evaluateCrossSignalAlerts(tempSamples, humSamples, lightSamples) {
+    const alerts = [];
 
-        const location = extractLocation(feedName);
-        const locationLabel = location !== 'unknown' ? LOCATION_MAP[location].label : 'Unknown';
-        
-        // Save with location information embedded in the feed name for easier querying
-        const enrichedFeedName = `${feedName} [${locationLabel}]`;
+    const latestTemp  = tempSamples.slice(-1)[0]?.value  ?? null;
+    const latestHum   = humSamples.slice(-1)[0]?.value   ?? null;
+    const latestLight = lightSamples.slice(-1)[0]?.value ?? null;
 
-        const { error } = await supabaseClient
-            .from('sensor_logs')
-            .insert([{ feed_name: enrichedFeedName, value: value }]);
-
-        if (error) {
-            addLog(null, null, `[supabase] Insert failed: ${error.message}`);
-        }
-    }
-
-    async function loadSensorLogs(showLog) {
-        if (!supabaseClient) return;
-
-        const { data, error } = await supabaseClient
-            .from('sensor_logs')
-            .select('id, feed_name, value, created_at')
-            .order('created_at', { ascending: false })
-            .limit(50);
-
-        if (error) {
-            setBadge('disconnected', 'Load failed');
-            addLog(null, null, `[supabase] Load failed: ${error.message}`);
-            return;
-        }
-
-        sensorLogs = data || [];
-        updateSummary(sensorLogs);
-        renderTable();
-        updateCharts();
-
-        if (showLog) {
-            addLog(null, null, `[supabase] Loaded ${sensorLogs.length} rows from sensor_logs`);
+    // 🔥 Heat stress: high temp + low humidity
+    if (latestTemp !== null && latestHum !== null) {
+        if (latestTemp > 32 && latestHum < 45) {
+            alerts.push({ icon: '🔥', severity: 'critical',
+                text: `Heat stress risk — temperature is ${latestTemp.toFixed(1)}°C with humidity at only ${latestHum.toFixed(1)}%. Consider activating irrigation immediately.` });
+        } else if (latestTemp > 28 && latestHum < 55) {
+            alerts.push({ icon: '⚠️', severity: 'warn',
+                text: `Temperature (${latestTemp.toFixed(1)}°C) and humidity (${latestHum.toFixed(1)}%) are approaching a stress threshold — monitor closely.` });
         }
     }
 
-    function subscribeToSensorLogs() {
-        if (!supabaseClient) return;
-
-        supabaseClient
-            .channel('sensor_logs_realtime')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'sensor_logs' },
-                () => {
-                    loadSensorLogs(false);
-                    addLog(null, null, '[supabase] Realtime insert received over wss://:443');
-                }
-            )
-            .subscribe(status => {
-                if (status === 'SUBSCRIBED') {
-                    addLog(null, null, '[supabase] Realtime subscription active');
-                }
-            });
-    }
-
-    // Node definitions: feed-prefix → { id, location, account }
-    const NODE_MAP = {
-        'north-field': { id: 'arduino-north', location: 'North Field', acct: 'acct1' },
-        'west-field':  { id: 'arduino-west',  location: 'West Field',  acct: 'acct1' },
-        'south-field': { id: 'arduino-south', location: 'South Field', acct: 'acct2' },
-        'east-field':  { id: 'arduino-east',  location: 'East Field',  acct: 'acct2' },
-    };
-
-    // ── Modal logic ──
-    function startConnect() {
-        const u1 = document.getElementById('aioUsername1').value.trim();
-        const k1 = document.getElementById('aioKey1').value.trim();
-        const u2 = document.getElementById('aioUsername2').value.trim();
-        const k2 = document.getElementById('aioKey2').value.trim();
-
-        if (!u1 || !k1 || !u2 || !k2) {
-            showModalError('Please fill in all four fields for both accounts.');
-            return;
+    // 🍄 Fungal risk: high humidity + low light + moderate temp
+    if (latestHum !== null && latestLight !== null && latestTemp !== null) {
+        if (latestHum > 85 && latestLight < DAYTIME_THRESHOLD && latestTemp > 18) {
+            alerts.push({ icon: '🍄', severity: 'warn',
+                text: `Fungal risk conditions detected — humidity at ${latestHum.toFixed(1)}% in low-light, warm conditions. Ensure good airflow.` });
         }
-
-        document.getElementById('connectBtn').classList.add('loading');
-        hideModalError();
-        connectedCount = 0;
-
-        connectMQTT('acct1', u1, k1, ['north-field', 'west-field']);
-        connectMQTT('acct2', u2, k2, ['south-field', 'east-field']);
     }
 
-    function showModalError(msg) {
-        const el = document.getElementById('modalError');
-        el.textContent = msg;
-        el.style.display = 'block';
-    }
-
-    function hideModalError() {
-        document.getElementById('modalError').style.display = 'none';
-    }
-
-    // ── MQTT ──
-    function connectMQTT(acctKey, username, key, fieldPrefixes) {
-        const clientId = 'smartfarm_' + acctKey + '_' + Math.random().toString(36).substr(2, 6);
-
-        const client = mqtt.connect('wss://io.adafruit.com/mqtt', {
-            username: username,
-            password: key,
-            clientId: clientId,
-            keepalive: 30,
-            reconnectPeriod: 5000,
-            connectTimeout: 10000
-        });
-
-        mqttClients[acctKey] = client;
-
-        client.on('connect', () => {
-            connectedCount++;
-            addLog(null, null, `[${acctKey}] Connected as ${username}`);
-
-            // Subscribe to all feeds for this account's nodes
-            fieldPrefixes.forEach(prefix => {
-                ['temperature', 'humidity', 'light', 'led'].forEach(feed => {
-                    const topic = `${username}/feeds/${prefix}-${feed}`;
-                    client.subscribe(topic, err => {
-                        if (!err) addLog(topic, null, 'subscribed');
-                    });
-                });
-            });
-
-            // Both clients connected — show dashboard
-            if (connectedCount === 2) {
-                document.getElementById('modalBackdrop').classList.add('hidden');
-                document.getElementById('dashboard').classList.add('visible');
-                document.getElementById('connectBtn').classList.remove('loading');
-                document.getElementById('livePill').style.display = 'flex';
-                setBadge('connected', 'Both brokers connected');
-                // Show account usernames in topbar
-                document.getElementById('aioUserDisplay').textContent =
-                    document.getElementById('aioUsername1').value.trim() + ' · ' +
-                    document.getElementById('aioUsername2').value.trim();
-            } else {
-                setBadge('connecting', 'Connecting second broker…');
-            }
-        });
-
-        client.on('message', (topic, message) => {
-            const payload = message.toString();
-            addLog(topic, payload);
-            handleMessage(topic, payload);
-        });
-
-        client.on('error', (err) => {
-            document.getElementById('connectBtn').classList.remove('loading');
-            setBadge('disconnected', 'Connection error');
-            const msg = err.message || String(err);
-            if (msg.includes('Not authorized') || msg.includes('auth')) {
-                showModalError(`[${acctKey}] Invalid credentials — check username and key.`);
-                document.getElementById('modalBackdrop').classList.remove('hidden');
-                document.getElementById('dashboard').classList.remove('visible');
-                connectedCount = 0;
-            }
-            addLog(null, null, `[${acctKey}] Error: ` + msg);
-        });
-
-        client.on('reconnect', () => {
-            setBadge('connecting', `[${acctKey}] Reconnecting…`);
-            addLog(null, null, `[${acctKey}] Reconnecting…`);
-        });
-
-        client.on('offline',  () => addLog(null, null, `[${acctKey}] Offline`));
-        client.on('close',    () => {
-            connectedCount = Math.max(0, connectedCount - 1);
-            if (connectedCount < 2) setBadge('disconnected', 'Broker disconnected');
-        });
-    }
-
-    function handleMessage(topic, payload) {
-        // topic format: username/feeds/prefix-feedtype
-        const parts = topic.split('/');
-        const feedFull = parts[parts.length - 1]; // e.g. "north-field-temperature"
-
-        // Match against known node prefixes
-        let matchedPrefix = null;
-        for (const prefix of Object.keys(NODE_MAP)) {
-            if (feedFull.startsWith(prefix + '-')) {
-                matchedPrefix = prefix;
-                break;
-            }
-        }
-        if (!matchedPrefix) return;
-
-        const node = NODE_MAP[matchedPrefix];
-        const feedType = feedFull.slice(matchedPrefix.length + 1); // "temperature", "humidity", etc.
-        const numericValue = parseFloat(payload);
-
-        if (!Number.isNaN(numericValue)) {
-            saveToSupabase(feedFull, numericValue);
-        }
-
-        if (feedType === 'led') {
-            const isOn = payload.trim() === '1';
-            // Update actuator chips for this node's location
-            updateActuatorChips(node.id, isOn);
-            return;
-        }
-
-        if (feedType === 'temperature') {
-            upsertSensor(node.id, node.location, 'temperature', numericValue);
-        } else if (feedType === 'humidity') {
-            upsertSensor(node.id, node.location, 'humidity', numericValue);
-        } else if (feedType === 'light') {
-            const ldr = numericValue;
-            const wasDay = sensors[node.id] ? sensors[node.id].is_day : true;
-            const isDay  = ldr >= DAYTIME_THRESHOLD;
-            if (wasDay && !isDay) delugeCount++;
-            upsertSensor(node.id, node.location, 'ldr', ldr);
-            upsertSensor(node.id, node.location, 'is_day', isDay);
-            updateActuatorChips(node.id, isDay);
-        }
-
-        renderTable();
-    }
-
-    function upsertSensor(id, location, field, value) {
-        if (!sensors[id]) {
-            sensors[id] = { sensor_id: id, location_name: location,
-                temperature: null, humidity: null, ldr: null,
-                is_day: true, timestamp: new Date().toISOString() };
-        }
-        sensors[id][field] = value;
-        sensors[id].timestamp = new Date().toISOString();
-    }
-
-    // Each node has its own LED + piezo chip row in actuator bar
-    function updateActuatorChips(nodeId, isOn) {
-        // Generic: update the first LED and piezo chip if only one node active,
-        // or find node-specific chips if they exist
-        const ledEl   = document.getElementById('ledChip-'   + nodeId) || document.getElementById('ledChip');
-        const piezoEl = document.getElementById('piezoChip-' + nodeId) || document.getElementById('piezoChip');
-        const dayEl   = document.getElementById('dayChip-'   + nodeId) || document.getElementById('dayNightChip');
-
-        if (ledEl)   setActuator(ledEl, isOn);
-        if (piezoEl) setActuator(piezoEl, isOn);
-        if (dayEl) {
-            const label = dayEl.querySelector('.actuator-state') || dayEl.querySelector('#dayNightLabel');
-            if (isOn) {
-                dayEl.classList.add('active');
-                dayEl.querySelector('.actuator-icon').textContent = '☀️';
-                if (label) label.textContent = 'Daytime detected';
-            } else {
-                dayEl.classList.remove('active');
-                dayEl.querySelector('.actuator-icon').textContent = '🌙';
-                if (label) label.textContent = 'Nighttime — silent mode';
+    // 💧 Drought stress: temp rising + humidity falling
+    if (tempSamples.length >= 3 && humSamples.length >= 3) {
+        const tempForecast = buildEMAForecast(tempSamples.map(s => s.value));
+        const humForecast  = buildEMAForecast(humSamples.map(s => s.value));
+        if (tempForecast && humForecast) {
+            if (tempForecast.trend === 'rising' && humForecast.trend === 'falling' && latestHum < 50) {
+                alerts.push({ icon: '💧', severity: 'warn',
+                    text: `Drought stress window opening — temperature trending up while humidity trends down below 50%. Irrigation may be needed soon.` });
             }
         }
     }
 
-    function setActuator(el, on) {
-        const stateEl = el.querySelector('.actuator-state');
-        if (on) { el.classList.add('active'); if (stateEl) stateEl.textContent = 'ON'; }
-        else    { el.classList.remove('active'); if (stateEl) stateEl.textContent = 'OFF'; }
-    }
-
-    // Legacy compat
-    function updateDayNightChip(isDay) { updateActuatorChips('_generic', isDay); }
-
-    function updateSummary(rows) {
-        const latestRow = rows[0] || null;
-        const uniqueFeeds = new Set(rows.map(row => row.feed_name).filter(Boolean)).size;
-
-        document.getElementById('activeNodes').textContent = rows.length;
-        document.getElementById('silentNodes').textContent = uniqueFeeds;
-        document.getElementById('delugeCount').textContent = latestRow ? formatValue(latestRow.value) : '—';
-        document.getElementById('latestFeedLabel').textContent = latestRow ? latestRow.feed_name : 'Waiting for data';
-        document.getElementById('totalNodes').textContent = latestRow ? formatTs(latestRow.created_at) : '—';
-        document.getElementById('livePill').style.display = rows.length > 0 ? 'flex' : 'none';
-    }
-
-    function extractLocation(feedName) {
-        const feedLower = feedName.toLowerCase();
-        
-        // First try to extract from the [Location] format
-        const bracketMatch = feedName.match(/\[(.*?)\]/);
-        if (bracketMatch) {
-            const bracketed = bracketMatch[1].toLowerCase();
-            for (const [location, config] of Object.entries(LOCATION_MAP)) {
-                if (bracketed.includes(location)) {
-                    return location;
-                }
-            }
-        }
-        
-        // Fallback to keyword matching
-        for (const [location, config] of Object.entries(LOCATION_MAP)) {
-            for (const keyword of config.keywords) {
-                if (feedLower.includes(keyword)) {
-                    return location;
-                }
-            }
-        }
-        return 'unknown';
-    }
-
-    function getLocationColor(location) {
-        const colors = {
-            'north': '#c84a1a',
-            'south': '#0d6eaa',
-            'east': '#7b1fa2',
-            'west': '#b07a10',
-            'unknown': '#6a7a6a'
-        };
-        return colors[location] || colors['unknown'];
-    }
-
-    function extractSensorType(feedName) {
-        const feedLower = feedName.toLowerCase();
-        if (feedLower.includes('temperature')) return 'temperature';
-        if (feedLower.includes('humidity')) return 'humidity';
-        if (feedLower.includes('light')) return 'light';
-        if (feedLower.includes('led')) return 'led';
-        return 'unknown';
-    }
-
-    function formatValueWithLabel(value, feedName) {
-        const sensorType = extractSensorType(feedName);
-        const numValue = formatValue(value);
-        
-        const labels = {
-            'temperature': { icon: '🌡️', unit: '°C', label: 'Temperature' },
-            'humidity': { icon: '💧', unit: '%', label: 'Humidity' },
-            'light': { icon: '💡', unit: 'lux', label: 'Light Level' },
-            'led': { icon: '⚡', unit: '', label: 'LED Status' },
-            'unknown': { icon: '📊', unit: '', label: 'Value' }
-        };
-        
-        const config = labels[sensorType] || labels['unknown'];
-        const unitStr = config.unit ? ` ${config.unit}` : '';
-        
-        return `${config.icon} ${numValue}${unitStr}`;
-    }
-
-    function setLocationFilter(location, buttonElement) {
-        currentLocationFilter = location;
-        
-        // Update tab active states
-        document.querySelectorAll('.location-tab').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Activate clicked button
-        if (buttonElement) {
-            buttonElement.classList.add('active');
-        }
-        
-        // Update panel header
-        const panelHead = document.querySelector('.panel-head h3');
-        if (location === 'all') {
-            panelHead.textContent = 'Recent Database Rows — All Locations';
-        } else {
-            const locationLabel = LOCATION_MAP[location].label;
-            panelHead.textContent = `Recent Database Rows — ${locationLabel}`;
-        }
-        
-        renderTable();
-        updateCharts();
-    }
-
-    function updateCharts() {
-        updateTemperatureChart();
-        updateHumidityChart();
-        updateLightChart();
-        updateLocationChart();
-    }
-
-    function getFilteredSensorData() {
-        if (currentLocationFilter === 'all') {
-            return sensorLogs;
-        }
-        return sensorLogs.filter(row => {
-            const location = extractLocation(row.feed_name || '');
-            return location === currentLocationFilter;
-        });
-    }
-
-    function updateTemperatureChart() {
-        const filteredData = getFilteredSensorData();
-        const temperatureData = filteredData
-            .filter(row => extractSensorType(row.feed_name || '') === 'temperature')
-            .slice(-20)
-            .reverse();
-
-        const labels = temperatureData.map(row => {
-            const d = new Date(row.created_at);
-            return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
-        });
-
-        const data = temperatureData.map(row => parseFloat(row.value));
-
-        if (!temperatureChart) {
-            const ctx = document.getElementById('temperatureChart').getContext('2d');
-            temperatureChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Temperature (°C)',
-                        data: data,
-                        borderColor: '#c84a1a',
-                        backgroundColor: 'rgba(200, 74, 26, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#c84a1a'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: false, ticks: { color: '#6a7a6a' } },
-                        x: { ticks: { color: '#6a7a6a' } }
-                    }
-                }
-            });
-        } else {
-            temperatureChart.data.labels = labels;
-            temperatureChart.data.datasets[0].data = data;
-            temperatureChart.update();
+    // ☀️ Active daytime window opening
+    if (lightSamples.length >= 3) {
+        const lightForecast = buildEMAForecast(lightSamples.map(s => s.value));
+        if (lightForecast && lightForecast.trend === 'rising' && latestLight !== null && latestLight > DAYTIME_THRESHOLD) {
+            alerts.push({ icon: '☀️', severity: 'info',
+                text: `Light is rising above the daytime threshold (${latestLight.toFixed(0)} lux) — active monitoring window is open.` });
         }
     }
 
-    function updateHumidityChart() {
-        const filteredData = getFilteredSensorData();
-        const humidityData = filteredData
-            .filter(row => extractSensorType(row.feed_name || '') === 'humidity')
-            .slice(-20)
-            .reverse();
+    return alerts;
+}
 
-        const labels = humidityData.map(row => {
-            const d = new Date(row.created_at);
-            return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
-        });
+// ══════════════════════════════════════════════════════
+// UPDATE INSIGHTS + FORECAST
+// ══════════════════════════════════════════════════════
+function updateInsights() {
+    const tempSamples  = getTrendSamples('temperature');
+    const humSamples   = getTrendSamples('humidity');
+    const lightSamples = getTrendSamples('light');
 
-        const data = humidityData.map(row => parseFloat(row.value));
+    // ── Cross-signal alert banner ──
+    const alerts = evaluateCrossSignalAlerts(tempSamples, humSamples, lightSamples);
+    const banner = document.getElementById('alertBanner');
+    const alertItems = document.getElementById('alertItems');
 
-        if (!humidityChart) {
-            const ctx = document.getElementById('humidityChart').getContext('2d');
-            humidityChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Humidity (%)',
-                        data: data,
-                        borderColor: '#0d6eaa',
-                        backgroundColor: 'rgba(13, 110, 170, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#0d6eaa'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { min: 0, max: 100, ticks: { color: '#6a7a6a' } },
-                        x: { ticks: { color: '#6a7a6a' } }
-                    }
-                }
-            });
-        } else {
-            humidityChart.data.labels = labels;
-            humidityChart.data.datasets[0].data = data;
-            humidityChart.update();
-        }
+    if (alerts.length > 0) {
+        const hasCritical = alerts.some(a => a.severity === 'critical');
+        banner.className = 'alert-banner visible' + (hasCritical ? ' critical' : '');
+        alertItems.innerHTML = alerts
+            .map(a => `<div class="alert-item"><span class="alert-icon">${a.icon}</span><span>${a.text}</span></div>`)
+            .join('');
+    } else {
+        banner.className = 'alert-banner';
     }
 
-    function updateLightChart() {
-        const filteredData = getFilteredSensorData();
-        const lightData = filteredData
-            .filter(row => extractSensorType(row.feed_name || '') === 'light')
-            .slice(-20)
-            .reverse();
+    // ── Per-sensor EMA forecast ──
+    const configs = [
+        { type: 'temperature', samples: tempSamples,  suffix: '°C',  valueId: 'forecastTemperature',  rangeId: 'forecastTemperatureRange',  stepsId: 'forecastTemperatureSteps',  noteId: 'forecastTemperatureNote'  },
+        { type: 'humidity',    samples: humSamples,   suffix: '%',   valueId: 'forecastHumidity',     rangeId: 'forecastHumidityRange',     stepsId: 'forecastHumiditySteps',     noteId: 'forecastHumidityNote'     },
+        { type: 'light',       samples: lightSamples, suffix: ' lux',valueId: 'forecastLight',        rangeId: 'forecastLightRange',        stepsId: 'forecastLightSteps',        noteId: 'forecastLightNote'        }
+    ];
 
-        const labels = lightData.map(row => {
-            const d = new Date(row.created_at);
-            return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
-        });
+    const insightLines = [];
+    const chips        = [];
 
-        const data = lightData.map(row => parseFloat(row.value));
+    const filterLabel = currentLocationFilter === 'all' ? 'All locations' : LOCATION_MAP[currentLocationFilter].label;
+    chips.push(filterLabel);
 
-        if (!lightChart) {
-            const ctx = document.getElementById('lightChart').getContext('2d');
-            lightChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Light Level (lux)',
-                        data: data,
-                        borderColor: '#e8a020',
-                        backgroundColor: 'rgba(232, 160, 32, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#e8a020'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { color: '#6a7a6a' } },
-                        x: { ticks: { color: '#6a7a6a' } }
-                    }
-                }
-            });
-        } else {
-            lightChart.data.labels = labels;
-            lightChart.data.datasets[0].data = data;
-            lightChart.update();
-        }
-    }
+    const totalSamples = tempSamples.length + humSamples.length + lightSamples.length;
+    chips.push(`${totalSamples} samples`);
 
-    function updateLocationChart() {
-        const locationCounts = {
-            'north': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'north').length,
-            'south': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'south').length,
-            'east': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'east').length,
-            'west': sensorLogs.filter(r => extractLocation(r.feed_name || '') === 'west').length
-        };
+    configs.forEach(cfg => {
+        const vals     = cfg.samples.map(s => s.value);
+        const forecast = buildEMAForecast(vals);
+        const last     = vals.slice(-1)[0] ?? null;
 
-        const colors = ['#c84a1a', '#0d6eaa', '#7b1fa2', '#b07a10'];
-        const labels = ['North', 'South', 'East', 'West'];
-        const data = [locationCounts.north, locationCounts.south, locationCounts.east, locationCounts.west];
-
-        if (!locationChart) {
-            const ctx = document.getElementById('locationChart').getContext('2d');
-            locationChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: data,
-                        backgroundColor: colors,
-                        borderColor: '#fff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { color: '#6a7a6a', padding: 15 }
-                        }
-                    }
-                }
-            });
-        } else {
-            locationChart.data.datasets[0].data = data;
-            locationChart.update();
-        }
-    }
-
-    function formatValue(value) {
-        if (value === null || value === undefined || value === '') return '—';
-        const numericValue = Number(value);
-        if (Number.isNaN(numericValue)) return String(value);
-        return numericValue.toFixed(2);
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('sensorTableBody');
-        
-        // Filter logs based on current location filter
-        let filteredLogs = sensorLogs;
-        if (currentLocationFilter !== 'all') {
-            filteredLogs = sensorLogs.filter(row => {
-                const location = extractLocation(row.feed_name || '');
-                return location === currentLocationFilter;
-            });
-        }
-
-        if (filteredLogs.length === 0) {
-            const locationLabel = currentLocationFilter === 'all' ? 'No sensor logs' : `No data from ${LOCATION_MAP[currentLocationFilter].label}`;
-            tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📡</div><p>${locationLabel}</p><small>Insert a row into sensor_logs and refresh to verify the connection</small></div></td></tr>`;
+        if (!forecast || last === null) {
+            document.getElementById(cfg.valueId).textContent  = '—';
+            document.getElementById(cfg.rangeId).textContent  = '';
+            document.getElementById(cfg.stepsId).innerHTML    = '';
+            document.getElementById(cfg.noteId).textContent   = 'Awaiting enough samples.';
             return;
         }
 
-        tbody.innerHTML = filteredLogs.map((row, i) => {
-            const location = extractLocation(row.feed_name || '');
-            const locationLabel = location !== 'unknown' ? LOCATION_MAP[location].label : 'Unknown';
-            const locationColor = getLocationColor(location);
-            const valueWithLabel = formatValueWithLabel(row.value, row.feed_name || '');
-            return `
-            <tr style="animation-delay:${i * 0.05}s">
-                <td><span class="sensor-id">${row.id}</span></td>
-                <td><span class="location-tag" style="color: ${locationColor}">📍 ${locationLabel}</span></td>
-                <td><span class="temp-val">${valueWithLabel}</span></td>
-                <td><span class="ts-val">${formatTs(row.created_at)}</span></td>
-            </tr>`;
+        const dec = cfg.type === 'light' ? 0 : 1;
+        const fmt = v => v.toFixed(dec);
+
+        document.getElementById(cfg.valueId).textContent = `${fmt(forecast.steps[0])}${cfg.suffix}`;
+        document.getElementById(cfg.rangeId).textContent =
+            `${fmt(Math.max(0, forecast.low))} – ${fmt(forecast.high)}${cfg.suffix}`;
+
+        // 3-step pills
+        document.getElementById(cfg.stepsId).innerHTML = forecast.steps.map((v, i) =>
+            `<span class="forecast-step">+${i+1}: ${fmt(v)}${cfg.suffix}</span>`
+        ).join('');
+
+        document.getElementById(cfg.noteId).textContent = forecast.note;
+
+        // Collect insight lines
+        if (cfg.type === 'temperature') {
+            if (forecast.trend === 'rising')  insightLines.push(`Temperature is trending upward (EMA Δ+${forecast.avgDelta.toFixed(2)}°C/step), which may increase plant stress.`);
+            if (forecast.trend === 'falling') insightLines.push(`Temperature is cooling down — the canopy is moving toward a more stable range.`);
+        }
+        if (cfg.type === 'humidity') {
+            const latestHum = last;
+            if (latestHum < 40 && forecast.trend === 'falling') {
+                insightLines.push('Humidity is falling below comfortable moisture levels — check irrigation.');
+                chips.push({ text: 'Low humidity ⚠', cls: 'warn' });
+            } else if (forecast.trend === 'rising') {
+                insightLines.push('Humidity is recovering, reducing evapotranspiration stress on the canopy.');
+            }
+        }
+        if (cfg.type === 'light') {
+            if (last < DAYTIME_THRESHOLD) {
+                insightLines.push('Light is in the night range — system is in quiet monitoring mode.');
+            } else if (forecast.trend === 'rising') {
+                insightLines.push('Light is rising, signalling the opening of the active daytime window.');
+            }
+        }
+    });
+
+    if (insightLines.length === 0) {
+        insightLines.push('Conditions appear stable. More samples will improve forecast confidence.');
+        chips.push({ text: '✓ Stable', cls: 'good' });
+    }
+
+    document.getElementById('insightSummary').textContent = insightLines[0];
+    document.getElementById('insightMeta').innerHTML = chips
+        .map(c => {
+            if (typeof c === 'string') return `<span class="insight-chip">${c}</span>`;
+            return `<span class="insight-chip ${c.cls}">${c.text}</span>`;
         }).join('');
-    }
+}
 
-    function formatTs(ts) {
-        if (!ts) return '—';
-        const d = new Date(ts);
-        if (isNaN(d)) return ts;
-        return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    }
+// ══════════════════════════════════════════════════════
+// CHARTS — with reference bands + EMA overlay
+// ══════════════════════════════════════════════════════
+function buildLineData(sensorType) {
+    const rows = getFilteredSensorData()
+        .filter(row => extractSensorType(row.feed_name || '') === sensorType)
+        .slice(-20)
+        .reverse();
 
-    function addLog(topic, payload, sys) {
-        const body = document.getElementById('mqttLogBody');
-        const now  = new Date().toLocaleTimeString('en-PH', { hour12: false });
-        const placeholder = body.querySelector('.log-sys');
-        if (placeholder && placeholder.textContent.includes('Waiting')) placeholder.closest('.log-line').remove();
-        const line = document.createElement('div');
-        line.className = 'log-line';
-        if (sys) {
-            line.innerHTML = `<span class="log-ts">${now}</span><span class="log-sys">${sys}</span>`;
-        } else {
-            const shortTopic   = topic   ? topic.split('/').slice(-2).join('/') : '';
-            const shortPayload = payload ? (payload.length > 60 ? payload.substr(0, 60) + '…' : payload) : '';
-            line.innerHTML = `<span class="log-ts">${now}</span><span class="log-topic">${shortTopic}</span><span class="log-payload">${shortPayload}</span>`;
+    const labels  = rows.map(r => {
+        const d = new Date(r.created_at);
+        return d.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', hour12:false });
+    });
+    const raw   = rows.map(r => parseFloat(r.value));
+    const smooth = ema(raw, 0.3);
+    return { labels, raw, smooth };
+}
+
+function refBandAnnotation(type) {
+    const r = IDEAL_RANGES[type];
+    if (!r) return {};
+    return {
+        idealBand: {
+            type: 'box',
+            yMin: r.min, yMax: r.max,
+            backgroundColor: 'rgba(76,175,80,0.07)',
+            borderColor: 'rgba(76,175,80,0.25)',
+            borderWidth: 1,
+            label: { display: true, content: r.label, position: 'start', font: { size: 10 }, color: '#4caf50' }
         }
-        body.prepend(line);
-        while (body.children.length > 30) body.removeChild(body.lastChild);
+    };
+}
+
+function lineChartOptions(type) {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } },
+            annotation: { annotations: refBandAnnotation(type) }
+        },
+        scales: {
+            y: { beginAtZero: type === 'light', ticks: { color: '#6a7a6a' } },
+            x: { ticks: { color: '#6a7a6a', maxRotation: 45 } }
+        }
+    };
+}
+
+function updateTemperatureChart() {
+    const { labels, raw, smooth } = buildLineData('temperature');
+    const datasets = [
+        { label: 'Raw (°C)',    data: raw,    borderColor: 'rgba(200,74,26,0.35)',  backgroundColor: 'rgba(200,74,26,0.07)', borderWidth:1, pointRadius:3, fill:true,  tension:0.1 },
+        { label: 'EMA (°C)',   data: smooth, borderColor: '#c84a1a',               backgroundColor: 'transparent',          borderWidth:2, pointRadius:0, fill:false, tension:0.4 }
+    ];
+    if (!temperatureChart) {
+        const ctx = document.getElementById('temperatureChart').getContext('2d');
+        temperatureChart = new Chart(ctx, { type:'line', data:{ labels, datasets }, options: lineChartOptions('temperature') });
+    } else {
+        temperatureChart.data.labels = labels;
+        temperatureChart.data.datasets[0].data = raw;
+        temperatureChart.data.datasets[1].data = smooth;
+        temperatureChart.update();
+    }
+}
+
+function updateHumidityChart() {
+    const { labels, raw, smooth } = buildLineData('humidity');
+    const datasets = [
+        { label: 'Raw (%)',   data: raw,    borderColor: 'rgba(13,110,170,0.35)',  backgroundColor: 'rgba(13,110,170,0.07)', borderWidth:1, pointRadius:3, fill:true,  tension:0.1 },
+        { label: 'EMA (%)',  data: smooth, borderColor: '#0d6eaa',               backgroundColor: 'transparent',           borderWidth:2, pointRadius:0, fill:false, tension:0.4 }
+    ];
+    if (!humidityChart) {
+        const ctx = document.getElementById('humidityChart').getContext('2d');
+        humidityChart = new Chart(ctx, { type:'line', data:{ labels, datasets }, options: lineChartOptions('humidity') });
+    } else {
+        humidityChart.data.labels = labels;
+        humidityChart.data.datasets[0].data = raw;
+        humidityChart.data.datasets[1].data = smooth;
+        humidityChart.update();
+    }
+}
+
+function updateLightChart() {
+    const { labels, raw, smooth } = buildLineData('light');
+    const datasets = [
+        { label: 'Raw (lux)',  data: raw,    borderColor: 'rgba(232,160,32,0.35)', backgroundColor: 'rgba(232,160,32,0.07)', borderWidth:1, pointRadius:3, fill:true,  tension:0.1 },
+        { label: 'EMA (lux)', data: smooth, borderColor: '#e8a020',               backgroundColor: 'transparent',           borderWidth:2, pointRadius:0, fill:false, tension:0.4 }
+    ];
+    if (!lightChart) {
+        const ctx = document.getElementById('lightChart').getContext('2d');
+        lightChart = new Chart(ctx, { type:'line', data:{ labels, datasets }, options: lineChartOptions('light') });
+    } else {
+        lightChart.data.labels = labels;
+        lightChart.data.datasets[0].data = raw;
+        lightChart.data.datasets[1].data = smooth;
+        lightChart.update();
+    }
+}
+
+function updateLocationChart() {
+    const counts = Object.fromEntries(
+        Object.keys(LOCATION_MAP).map(loc => [loc,
+            sensorLogs.filter(r => extractLocation(r.feed_name || '') === loc).length
+        ])
+    );
+    const labels = Object.keys(LOCATION_MAP).map(l => LOCATION_MAP[l].label);
+    const data   = Object.values(counts);
+    const colors = ['#c84a1a','#0d6eaa','#7b1fa2','#b07a10'];
+
+    if (!locationChart) {
+        const ctx = document.getElementById('locationChart').getContext('2d');
+        locationChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors, borderColor:'#fff', borderWidth:2 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position:'bottom', labels:{ color:'#6a7a6a', padding:15 } } }
+            }
+        });
+    } else {
+        locationChart.data.datasets[0].data = data;
+        locationChart.update();
+    }
+}
+
+function updateCharts() {
+    updateTemperatureChart();
+    updateHumidityChart();
+    updateLightChart();
+    updateLocationChart();
+}
+
+// ══════════════════════════════════════════════════════
+// TABLE — with anomaly badges
+// ══════════════════════════════════════════════════════
+function renderTable() {
+    const tbody = document.getElementById('sensorTableBody');
+    let filtered = sensorLogs;
+    if (currentLocationFilter !== 'all') {
+        filtered = sensorLogs.filter(r => extractLocation(r.feed_name || '') === currentLocationFilter);
     }
 
-    function clearLog() {
-        document.getElementById('mqttLogBody').innerHTML = '<div class="log-line"><span class="log-ts">--:--:--</span><span class="log-sys">Log cleared</span></div>';
+    if (!filtered.length) {
+        const label = currentLocationFilter === 'all' ? 'No sensor logs' : `No data from ${LOCATION_MAP[currentLocationFilter].label}`;
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">📡</div><p>${label}</p><small>Insert a row into sensor_logs and refresh to verify the connection</small></div></td></tr>`;
+        return;
     }
 
-    // ── Helpers ──
-    function setBadge(state, text) {
-        const badge = document.getElementById('mqttBadge');
-        badge.className = 'mqtt-badge ' + state;
-        document.getElementById('mqttBadgeText').textContent = text;
-    }
+    // Pre-build per-type sample lists for anomaly detection
+    const samplesByType = {};
+    ['temperature','humidity','light'].forEach(t => {
+        samplesByType[t] = sensorLogs
+            .filter(r => extractSensorType(r.feed_name || '') === t)
+            .map(r => ({ value: parseFloat(r.value) }))
+            .filter(s => !isNaN(s.value));
+    });
 
-    function doDisconnect() {
-        Object.values(mqttClients).forEach(c => { if (c) c.end(true); });
-        mqttClients = { acct1: null, acct2: null };
-        sensors = {}; delugeCount = 0; connectedCount = 0;
-        document.getElementById('dashboard').classList.remove('visible');
-        document.getElementById('modalBackdrop').classList.remove('hidden');
-        document.getElementById('connectBtn').classList.remove('loading');
-        document.getElementById('aioKey1').value = '';
-        document.getElementById('aioKey2').value = '';
-        hideModalError();
-    }
+    tbody.innerHTML = filtered.map((row, i) => {
+        const location     = extractLocation(row.feed_name || '');
+        const locLabel     = location !== 'unknown' ? LOCATION_MAP[location].label : 'Unknown';
+        const locColor     = getLocationColor(location);
+        const sType        = extractSensorType(row.feed_name || '');
+        const numericVal   = parseFloat(row.value);
+        const anomaly      = !isNaN(numericVal) && samplesByType[sType]
+                             ? isAnomaly(numericVal, samplesByType[sType]) : false;
+        const anomalyBadge = anomaly ? `<span class="anomaly-badge">⚡ Anomaly</span>` : '';
+        const valueHTML    = formatValueWithLabel(row.value, row.feed_name || '');
 
-    initSupabase();
+        return `
+        <tr style="animation-delay:${i*0.05}s">
+            <td><span class="sensor-id">${row.id}</span></td>
+            <td><span class="location-tag" style="color:${locColor}">📍 ${locLabel}</span></td>
+            <td><span class="temp-val">${valueHTML}</span>${anomalyBadge}</td>
+            <td><span class="ts-val">${formatTs(row.created_at)}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// SUMMARY STATS
+// ══════════════════════════════════════════════════════
+function updateSummary(rows) {
+    const latest = rows[0] || null;
+    const uniqueFeeds = new Set(rows.map(r => r.feed_name).filter(Boolean)).size;
+    document.getElementById('activeNodes').textContent    = rows.length;
+    document.getElementById('silentNodes').textContent    = uniqueFeeds;
+    document.getElementById('delugeCount').textContent    = latest ? formatValue(latest.value) : '—';
+    document.getElementById('latestFeedLabel').textContent= latest ? latest.feed_name : 'Waiting for data';
+    document.getElementById('totalNodes').textContent     = latest ? formatTs(latest.created_at) : '—';
+    document.getElementById('livePill').style.display     = rows.length > 0 ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════════════
+// LOCATION FILTER
+// ══════════════════════════════════════════════════════
+function setLocationFilter(location, btn) {
+    currentLocationFilter = location;
+    document.querySelectorAll('.location-tab').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const panelTitle = document.getElementById('panelTitle');
+    panelTitle.textContent = location === 'all'
+        ? 'Recent Database Rows — All Locations'
+        : `Recent Database Rows — ${LOCATION_MAP[location].label}`;
+    renderTable();
+    updateCharts();
+    updateInsights();
+}
+
+// ══════════════════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════════════════
+function addLog(topic, payload, sys) {
+    const body = document.getElementById('mqttLogBody');
+    const now  = new Date().toLocaleTimeString('en-PH', { hour12: false });
+    const placeholder = body.querySelector('.log-sys');
+    if (placeholder && placeholder.textContent.includes('Waiting')) placeholder.closest('.log-line').remove();
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    if (sys) {
+        line.innerHTML = `<span class="log-ts">${now}</span><span class="log-sys">${sys}</span>`;
+    } else {
+        const short   = topic   ? topic.split('/').slice(-2).join('/') : '';
+        const shortP  = payload ? (payload.length > 60 ? payload.substr(0,60)+'…' : payload) : '';
+        line.innerHTML= `<span class="log-ts">${now}</span><span class="log-topic">${short}</span><span class="log-payload">${shortP}</span>`;
+    }
+    body.prepend(line);
+    while (body.children.length > 30) body.removeChild(body.lastChild);
+}
+
+function setBadge(state, text) {
+    const badge = document.getElementById('mqttBadge');
+    badge.className = 'mqtt-badge ' + state;
+    document.getElementById('mqttBadgeText').textContent = text;
+}
+
+// ── Boot ──
+initSupabase();
 </script>
 </body>
 </html>
